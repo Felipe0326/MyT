@@ -1,0 +1,55 @@
+{
+  "name": "tlamatiloyan-dashboard",
+  "version": "0.3.0",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test tests/security-source.test.mjs",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern work --ignore-pattern outputs",
+    "import:nps": "node --env-file=.env.local scripts/import-nps.mjs",
+    "prepare:nps": "node scripts/prepare-nps-csv.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "^1.25.0",
+    "next": "^16.2.12",
+    "nodemailer": "^9.0.3",
+    "papaparse": "^5.5.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "recharts": "^3.10.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.47.0",
+    "@cloudflare/workers-types": "^5.20260727.1",
+    "@eslint/js": "10.0.1",
+    "@next/eslint-plugin-next": "16.2.12",
+    "@tailwindcss/postcss": "4.2.1",
+    "@types/node": "22.19.19",
+    "@types/nodemailer": "^7.0.0",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "@vitejs/plugin-rsc": "0.5.26",
+    "eslint": "10.8.0",
+    "globals": "17.8.0",
+    "react-server-dom-webpack": "19.2.8",
+    "tailwindcss": "4.2.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.65.0",
+    "vinext": "0.0.50",
+    "vite": "8.1.5",
+    "wrangler": "4.114.0"
+  },
+  "overrides": {
+    "postcss": "8.5.23",
+    "sharp": "0.35.3"
+  },
+  "type": "module"
+}

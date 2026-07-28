@@ -1,0 +1,15 @@
+VERSIÓN 4.8 — CORREO AUTOMÁTICO PREPARADO
+
+1. Esta versión no contiene contraseñas.
+2. Conserva tu archivo .env.local actual.
+3. Ejecuta una sola vez:
+   supabase/migrations/202607270001_password_resets_tym.sql
+4. Solicita a TI host, puerto y seguridad del SMTP OnPrem.
+5. Configura los valores como secretos del servidor o variables protegidas de GitLab.
+6. Consulta CONFIGURACION_CORREO_V4_8.md.
+
+Mientras no exista configuración SMTP:
+- las invitaciones siguen generando un enlace manual para el administrador;
+- la recuperación de contraseña no envía enlaces por seguridad.
+
+No debes cambiar el flujo n8n que ya funciona.

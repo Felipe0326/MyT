@@ -1,0 +1,32 @@
+VERSIÓN 4.9 — CORREO AUTOMÁTICO + SEGURIDAD ENDURECIDA
+
+ESTA VERSIÓN REEMPLAZA A LA V4.8.
+No necesitas abrir ni ejecutar primero el SQL de la V4.8.
+
+PASOS:
+
+1. Conserva tu archivo .env.local o las variables actuales del servidor.
+2. Ejecuta una sola vez en Supabase SQL Editor:
+   SQL_EJECUTAR_V4_9_CORREO_Y_SEGURIDAD.sql
+3. Configura APP_URL con la dirección HTTPS pública de la aplicación.
+4. Cuando TI entregue los datos SMTP, configura:
+   SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_REQUIRE_TLS,
+   SMTP_USER y SMTP_PASS.
+5. Publica la aplicación.
+
+IMPORTANTE:
+
+- El SQL es acumulativo: instala recuperación de contraseña y límites de
+  intentos sin eliminar usuarios, NPS ni Refrendos.
+- Si el SQL no está instalado, las rutas sensibles responden 503 por
+  seguridad; no quedan funcionando sin protección.
+- No hay contraseñas dentro del código ni de este paquete.
+- La carpeta build contiene código fuente requerido por Vite; no debe borrarse.
+- RATE_LIMIT_SECRET es opcional. Si está vacío, el servidor utiliza
+  internamente SUPABASE_SERVICE_ROLE_KEY para anonimizar los identificadores.
+- Mientras falte SMTP, crear o reenviar invitaciones conserva el enlace
+  manual para el administrador.
+- En cuanto se agreguen las credenciales SMTP, los botones existentes
+  enviarán automáticamente; no se necesita cambiar el código.
+
+Consulta CONFIGURACION_V4_9_CORREO_Y_SEGURIDAD.md.

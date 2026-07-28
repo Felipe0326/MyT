@@ -1,5 +1,98 @@
 @import "tailwindcss";
 
+/* ==========================================================
+   TIPOGRAFÍAS INSTITUCIONALES
+   Copia las carpetas KarolSans, QuetzalliSans y TwogetherSans
+   dentro de public/fonts.
+   ========================================================== */
+@font-face {
+  font-family: "Twogether Sans";
+  src: url("/fonts/TwogetherSans/TwogetherSans-Regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Twogether Sans";
+  src: url("/fonts/TwogetherSans/TwogetherSans-Medium.otf") format("opentype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Twogether Sans";
+  src: url("/fonts/TwogetherSans/TwogetherSans-Bold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Quetzalli Sans";
+  src: url("/fonts/Quetzalli Sans/QuetzalliSans-Regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Quetzalli Sans";
+  src: url("/fonts/Quetzalli Sans/QuetzalliSans-Medium.otf") format("opentype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Quetzalli Sans";
+  src: url("/fonts/Quetzalli Sans/QuetzalliSans-Bold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Quetzalli Sans";
+  src: url("/fonts/Quetzalli Sans/QuetzalliSans-Black.otf") format("opentype");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karol Sans";
+  src: url("/fonts/KarolSans/fonnts.com-Karol_Sans_Regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karol Sans";
+  src: url("/fonts/KarolSans/fonnts.com-Karol_Sans_SemiBold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karol Sans";
+  src: url("/fonts/KarolSans/fonnts.com-Karol_Sans_Bold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karol Sans";
+  src: url("/fonts/KarolSans/fonnts.com-Karol_Sans_Black.otf") format("opentype");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+
 @utility scrollbar-hide {
   &::-webkit-scrollbar { display: none; }
   -ms-overflow-style: none;
@@ -7,8 +100,9 @@
 }
 
 @theme {
-  --font-karla: "Karol Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-karla: "Karol Sans", "Twogether Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Twogether Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Quetzalli Sans", "Twogether Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
 
   --color-dash-bg: var(--dash-bg);
   --color-dash-secondary: var(--dash-secondary);
@@ -59,13 +153,17 @@
 
 * { box-sizing: border-box; }
 html { background: var(--cream); color: var(--ink); }
-body { margin: 0; min-height: 100vh; background: var(--cream); color: var(--ink); font-family: "Twogether Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-h1, h2, h3, .login-heading h1, .invite-card h1, .profile-modal-head h2 { font-family: "Quetzalli Sans", Georgia, serif; }
+body { margin: 0; min-height: 100vh; background: var(--cream); color: var(--ink); font-family: "Twogether Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-synthesis: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+h1, h2, h3, h4, h5, h6, .login-heading h1, .invite-card h1, .profile-modal-head h2, .content-heading h1, .card-heading h2, .comments-heading h2, .coming-page h1 { font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif; }
 small, .eyebrow, .sidebar-nav > p, .sidebar-nav button em, .text-micro, .font-karla { font-family: "Karol Sans", "Twogether Sans", sans-serif; }
-button, input, select { font: inherit; }
+button, input, select, textarea, option { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .55; }
 ::selection { background: #cfd9c8; color: #243020; }
+
+.font-twogether { font-family: "Twogether Sans", "Segoe UI", Arial, sans-serif !important; }
+.font-quetzalli { font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif !important; }
+.font-karol { font-family: "Karol Sans", "Twogether Sans", "Segoe UI", sans-serif !important; }
 
 .eyebrow { margin: 0 0 8px; color: var(--olive); font-size: 11px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
 .primary-button, .secondary-button, .text-button { border: 0; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 750; transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
@@ -82,7 +180,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .login-brand { display: flex; justify-content: center; margin-bottom: 28px; }
 .login-logo { width: min(300px, 92%); height: auto; object-fit: contain; }
 .login-heading { margin-bottom: 24px; text-align: center; }
-.login-heading h1, .invite-card h1 { margin: 0; color: #1f2d1f; font-family: Georgia, "Times New Roman", serif; font-size: clamp(22px, 4vw, 26px); font-weight: 700; line-height: 1.15; }
+.login-heading h1, .invite-card h1 { margin: 0; color: #1f2d1f; font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif; font-size: clamp(22px, 4vw, 26px); font-weight: 700; line-height: 1.15; }
 .login-heading > p:last-child, .invite-card > p { max-width: 360px; margin: 8px auto 0; color: #5d5e5f; font-size: 13px; line-height: 1.5; }
 .login-form { display: grid; gap: 16px; }
 .auth-field, .invite-form > label { display: grid; gap: 7px; }
@@ -120,7 +218,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .invite-logo { display: block; width: min(300px, 92%); height: auto; object-fit: contain; }
 .invite-heading { margin-bottom: 24px; text-align: center; }
 .invite-heading .eyebrow { margin-bottom: 8px; color: var(--wine); }
-.invite-heading h1 { margin: 0; color: var(--ink); font-family: Georgia, "Times New Roman", serif; font-size: clamp(24px, 5vw, 30px); line-height: 1.15; }
+.invite-heading h1 { margin: 0; color: var(--ink); font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif; font-size: clamp(24px, 5vw, 30px); line-height: 1.15; }
 .invite-heading > p:last-child { max-width: 360px; margin: 9px auto 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .invite-password-form { gap: 17px; }
 .invite-password-form .form-error { margin-top: 1px; }
@@ -145,7 +243,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .sidebar-top { min-height: 78px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
 .sidebar-logo-top { min-height: auto; padding: 4px 2px 18px; }
 .sidebar-brand { min-height: 52px; padding: 0 4px; display: flex; align-items: center; gap: 11px; }
-.system-monogram { width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 13px 13px 13px 4px; color: #fff; background: var(--olive); font-family: Georgia, "Times New Roman", serif; font-size: 15px; font-weight: 800; letter-spacing: -.04em; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.system-monogram { width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 13px 13px 13px 4px; color: #fff; background: var(--olive); font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif; font-size: 15px; font-weight: 800; letter-spacing: -.04em; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
 .sidebar-brand-text { min-width: 0; flex: 1; }
 .sidebar-brand-text strong, .sidebar-brand-text small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar-brand-text strong { font-size: 14px; }
@@ -187,7 +285,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .profile-modal-close { position: absolute; top: 16px; right: 16px; width: 38px; height: 38px; display: grid; place-items: center; border: 0; border-radius: 10px; color: #667066; background: #f1f1ed; }
 .profile-modal-close:hover { color: var(--ink); background: #e7e9e3; }
 .profile-modal-head { display: flex; align-items: center; gap: 16px; padding-right: 42px; }
-.profile-modal-head h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 25px; line-height: 1.15; }
+.profile-modal-head h2 { margin: 0; font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif; font-size: 25px; line-height: 1.15; }
 .profile-modal-head .eyebrow { margin-bottom: 5px; }
 .profile-modal-head > div:last-child > span { display: block; margin-top: 6px; color: var(--wine); font-size: 12px; font-weight: 750; }
 .profile-modal-avatar { width: 64px !important; height: 64px !important; flex: 0 0 64px; font-size: 17px !important; }
@@ -218,7 +316,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 /* Dashboard */
 .dashboard-stack { display: grid; gap: 24px; }
 .content-heading { min-height: 82px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
-.content-heading h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(34px, 4vw, 52px); font-weight: 600; letter-spacing: -.035em; }
+.content-heading h1 { margin: 0; font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif; font-size: clamp(34px, 4vw, 52px); font-weight: 600; letter-spacing: -.035em; }
 .content-heading > div > p:last-child { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
 .live-chip { padding: 9px 13px; display: flex; align-items: center; gap: 8px; border: 1px solid #dde2da; border-radius: 999px; color: #536052; background: rgba(255,255,255,.7); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 .live-chip span { width: 7px; height: 7px; border-radius: 50%; background: #6e8b61; box-shadow: 0 0 0 5px rgba(110,139,97,.12); }
@@ -250,7 +348,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .chart-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(310px, .8fr); gap: 18px; }
 .chart-card { min-width: 0; padding: 23px; }
 .card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
-.card-heading h2, .comments-heading h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 21px; font-weight: 600; }
+.card-heading h2, .comments-heading h2 { margin: 0; font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif; font-size: 21px; font-weight: 600; }
 .card-heading > span { padding: 6px 9px; color: #788078; background: #f3f3ef; border-radius: 7px; font-size: 9px; font-weight: 750; text-transform: uppercase; }
 .card-heading.centered { justify-content: center; text-align: center; }
 .chart-frame { width: 100%; height: 325px; margin-top: 20px; }
@@ -339,7 +437,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 /* Placeholder */
 .coming-page { min-height: calc(100vh - 120px); display: grid; place-content: center; justify-items: center; text-align: center; }
 .coming-icon { width: 72px; height: 72px; margin-bottom: 25px; display: grid; place-items: center; color: var(--wine); background: var(--wine-soft); border: 1px solid #ead7da; border-radius: 23px; }
-.coming-page h1 { margin: 0; font-family: Georgia, serif; font-size: 44px; }
+.coming-page h1 { margin: 0; font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif; font-size: 44px; }
 .coming-page > p:not(.eyebrow) { max-width: 500px; margin: 12px 0; color: var(--muted); line-height: 1.6; }
 .coming-status { margin-top: 22px; padding: 10px 13px; display: flex; align-items: center; gap: 9px; border: 1px solid #deddd6; border-radius: 999px; background: #fff; }
 .coming-status span { width: 8px; height: 8px; border-radius: 50%; background: #b38e56; }
@@ -370,7 +468,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   .mobile-header { position: sticky; top: 0; z-index: 25; min-height: 64px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); background: rgba(247,246,242,.93); backdrop-filter: blur(14px); }
   .mobile-header > button { width: 38px; height: 38px; display: grid; place-items: center; border: 0; border-radius: 9px; color: var(--ink); background: #ecebe5; }
   .mobile-wordmark { display: flex; align-items: baseline; gap: 7px; }
-  .mobile-wordmark strong { color: var(--wine); font-family: Georgia, serif; }
+  .mobile-wordmark strong { color: var(--wine); font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif; }
   .mobile-wordmark span { color: var(--muted); font-size: 10px; }
   .workspace-content { padding-top: 25px; }
   .workspace-content.full-bleed { padding: 0; }

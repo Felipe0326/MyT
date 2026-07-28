@@ -25,13 +25,13 @@ import {
   Cell,
   Pie,
   PieChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { format } from "./npsDateUtils";
 import { SmoothFilterSelect } from "./SmoothFilterSelect";
+import { ChartVisibilityProvider, SafeResponsiveContainer } from "./SafeResponsiveContainer";
 
 export type NpsSortKey = "date" | "dependencia" | "feedback" | "score";
 type SortDirection = "asc" | "desc";
@@ -90,7 +90,7 @@ const MONTHS = [
   { label: "Julio", start: "2026-07-01", end: "2026-07-31" },
 ] as const;
 
-export function NpsDashboard() {
+export function NpsDashboard({ isActive = true }: { isActive?: boolean }) {
   const [dashboard, setDashboard] = useState<DashboardResponse>(EMPTY_RESPONSE);
   const [selectedDependencia, setSelectedDependencia] = useState("");
   const [selectedSucursal, setSelectedSucursal] = useState("");
@@ -105,6 +105,8 @@ export function NpsDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isActive) return;
+
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setRefreshing(true);
@@ -144,7 +146,7 @@ export function NpsDashboard() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [selectedDependencia, selectedSucursal, selectedRecommendation, dateRange.start, dateRange.end, page, sortKey, sortDirection]);
+  }, [isActive, selectedDependencia, selectedSucursal, selectedRecommendation, dateRange.start, dateRange.end, page, sortKey, sortDirection]);
 
   const trendData = useMemo(
     () => dashboard.trend.map((row) => ({
@@ -259,7 +261,8 @@ export function NpsDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f4f0] text-[#1f2d1f]">
+    <ChartVisibilityProvider active={isActive}>
+      <div className="min-h-screen bg-[#f5f4f0] text-[#1f2d1f]">
       <header className="dashboard-sticky-header sticky border-b border-[#e6e4da] bg-white/95 px-3 py-3 shadow-sm backdrop-blur sm:px-5 sm:py-4 lg:px-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -397,7 +400,7 @@ export function NpsDashboard() {
               <span className="rounded-full bg-[#f1f3ed] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-[#526647]">Promedio mensual</span>
             </div>
             <div className="h-[280px] w-full min-w-0 sm:h-[340px] lg:h-[390px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <SafeResponsiveContainer>
                 <AreaChart
                   data={trendData}
                   margin={{ top: 15, right: 18, left: -12, bottom: 5 }}
@@ -428,7 +431,7 @@ export function NpsDashboard() {
                     isAnimationActive={false}
                   />
                 </AreaChart>
-              </ResponsiveContainer>
+              </SafeResponsiveContainer>
             </div>
           </article>
 
@@ -438,7 +441,7 @@ export function NpsDashboard() {
               <h2 className="text-xl font-bold text-[#1f2d1f]">Distribución de respuestas</h2>
             </div>
             <div className="relative mx-auto h-[240px] w-full max-w-[310px] sm:h-[280px] sm:max-w-[330px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <SafeResponsiveContainer>
                 <PieChart>
                   <Pie
                     data={[
@@ -463,7 +466,7 @@ export function NpsDashboard() {
                   </Pie>
                   <Tooltip formatter={(value) => Number(value).toLocaleString("es-MX")} />
                 </PieChart>
-              </ResponsiveContainer>
+              </SafeResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
                 <strong className="text-4xl text-[#1f2d1f]">{recommendationPercentage}%</strong>
                 <span className="mt-1 text-[10px] font-black uppercase tracking-wider text-[#7a8176]">Recomienda</span>
@@ -584,7 +587,8 @@ export function NpsDashboard() {
           )}
         </section>
       </main>
-    </div>
+      </div>
+    </ChartVisibilityProvider>
   );
 }
 

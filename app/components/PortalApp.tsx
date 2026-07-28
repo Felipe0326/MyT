@@ -217,12 +217,12 @@ function ApplicationShell({ session, idleWarning, onLogout }: { session: Session
         <main className={`workspace-content ${active === "dashboard-nps" || active === "dashboard-2" ? "full-bleed" : ""}`}>
           {visitedDashboards.includes("dashboard-nps") && (
             <div hidden={active !== "dashboard-nps"}>
-              <NpsDashboard />
+              <NpsDashboard isActive={active === "dashboard-nps"} />
             </div>
           )}
           {visitedDashboards.includes("dashboard-2") && (
             <div hidden={active !== "dashboard-2"}>
-              <RefrendosDashboard />
+              <RefrendosDashboard isActive={active === "dashboard-2"} />
             </div>
           )}
           {active === "usuarios" && session.user.role === "administrador" && <UsersAdmin csrfToken={session.csrfToken} currentUserId={session.user.id} />}

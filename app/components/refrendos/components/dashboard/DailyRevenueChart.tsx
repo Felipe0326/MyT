@@ -1,5 +1,6 @@
 import React from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { SafeResponsiveContainer } from '../../../SafeResponsiveContainer';
 import { ChartContainer } from './ChartContainer';
 import { CustomTooltip } from './CustomTooltip';
 import { DollarSign } from 'lucide-react';
@@ -64,7 +65,7 @@ export const DailyRevenueChart: React.FC<DailyRevenueChartProps> = ({
       }
     >
       <div className="h-[260px] w-full sm:h-[340px]">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+        <SafeResponsiveContainer>
           <AreaChart
             data={data}
             margin={{ top: 10, right: 6, left: -8, bottom: 0 }}
@@ -133,7 +134,7 @@ export const DailyRevenueChart: React.FC<DailyRevenueChartProps> = ({
               activeDot={{ r: 6, strokeWidth: 0, fill: COLORS.traditional }} isAnimationActive={false} 
             />
           </AreaChart>
-        </ResponsiveContainer>
+        </SafeResponsiveContainer>
       </div>
     </ChartContainer>
   );

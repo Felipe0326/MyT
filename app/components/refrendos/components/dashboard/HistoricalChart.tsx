@@ -1,5 +1,6 @@
 import React from 'react';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, LabelList, ReferenceLine } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, LabelList, ReferenceLine } from 'recharts';
+import { SafeResponsiveContainer } from '../../../SafeResponsiveContainer';
 import { ChartContainer } from './ChartContainer';
 import { ToggleBtn } from './ToggleBtn';
 import { CustomTooltip } from './CustomTooltip';
@@ -58,7 +59,7 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
             formatCurrency={formatCurrency}
           />
         )}
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+        <SafeResponsiveContainer>
           {historicalView === 'annual' ? (
             <BarChart data={historicalData} margin={{ top: 30, right: 10, left: 0, bottom: 5 }}>
               <defs>
@@ -106,7 +107,7 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
               <Line isAnimationActive={false} type="monotone" dataKey="year2026" name="2026" stroke={COLORS.historyLine[2026]} strokeWidth={3} dot={{r: 3, strokeWidth: 1, stroke: 'white', fill: COLORS.historyLine[2026]}} activeDot={{r: 7}} style={{ filter: "drop-shadow(0px 4px 6px rgba(0,0,0,0.1))" }} />
             </LineChart>
           )}
-        </ResponsiveContainer>
+        </SafeResponsiveContainer>
       </div>
     </ChartContainer>
   );

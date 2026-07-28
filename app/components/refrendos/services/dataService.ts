@@ -440,10 +440,58 @@ export const EMPTY_REFRENDO_DASHBOARD: RefrendoDashboardResponse = {
   pagination: { page: 1, pageSize: 50, total: 0, totalPages: 0, hasPrevious: false, hasNext: false },
 };
 
+
+const DASHBOARD_CACHE_TTL_MS = 30_000;
+
+type DashboardCacheEntry = {
+  expiresAt: number;
+  value: RefrendoDashboardResponse;
+};
+
+const dashboardCache = new Map<string, DashboardCacheEntry>();
+
+function dashboardCacheKey(query: RefrendoDashboardQuery): string {
+  return JSON.stringify({
+    year: query.year ?? null,
+    month: query.month ?? null,
+    dateFrom: query.dateFrom ?? null,
+    dateTo: query.dateTo ?? null,
+    movimiento: query.movimiento ?? null,
+    hora: query.hora ?? null,
+    page: query.page ?? 1,
+    pageSize: query.pageSize ?? 50,
+    sort: query.sort ?? 'date',
+    direction: query.direction ?? 'desc',
+  });
+}
+
+export function clearRefrendoDashboardCache(): void {
+  dashboardCache.clear();
+}
+
+function niceAxisMaximum(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 100;
+
+  let step = 100;
+  if (value > 1_000 && value <= 5_000) step = 500;
+  else if (value > 5_000 && value <= 10_000) step = 1_000;
+  else if (value > 10_000 && value <= 50_000) step = 5_000;
+  else if (value > 50_000) step = 10_000;
+
+  return Math.ceil(value / step) * step;
+}
+
 export const fetchRefrendoDashboard = async (
   query: RefrendoDashboardQuery = {},
   signal?: AbortSignal,
 ): Promise<RefrendoDashboardResponse> => {
+  const cacheKey = dashboardCacheKey(query);
+  const cached = dashboardCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value;
+  }
+  if (cached) dashboardCache.delete(cacheKey);
+
   const params = new URLSearchParams();
   if (query.year != null) params.set('year', String(query.year));
   if (query.month != null) params.set('month', String(query.month));
@@ -463,12 +511,46 @@ export const fetchRefrendoDashboard = async (
     signal,
   });
 
-  const payload = await response.json().catch(() => null);
+  const payload = await response.json().catch(() => null) as
+    | RefrendoDashboardResponse
+    | { error?: string }
+    | null;
   if (!response.ok) {
-    throw new Error(payload?.error || `Error al consultar Refrendos (${response.status}).`);
+    const message = payload && 'error' in payload ? payload.error : undefined;
+    throw new Error(message || `Error al consultar Refrendos (${response.status}).`);
   }
-  return payload as RefrendoDashboardResponse;
+
+  const dashboard = payload as RefrendoDashboardResponse;
+  dashboardCache.set(cacheKey, {
+    expiresAt: Date.now() + DASHBOARD_CACHE_TTL_MS,
+    value: dashboard,
+  });
+  return dashboard;
 };
+
+export async function fetchRefrendoYearAxisMax(
+  year: number,
+  signal?: AbortSignal,
+): Promise<number> {
+  const dashboard = await fetchRefrendoDashboard({
+    year,
+    page: 1,
+    pageSize: 1,
+    sort: 'date',
+    direction: 'desc',
+  }, signal);
+
+  const maximum = dashboard.dailyTrend.reduce((currentMax, item) => (
+    Math.max(
+      currentMax,
+      Number(item.totalRegistros) || 0,
+      Number(item.digital) || 0,
+      Number(item.tradicional) || 0,
+    )
+  ), 0);
+
+  return niceAxisMaximum(maximum);
+}
 
 export const fetchLiveTramiteData = async (): Promise<TramiteData[]> => {
   const dashboard = await fetchRefrendoDashboard({ year: 2026, page: 1, pageSize: 50 });

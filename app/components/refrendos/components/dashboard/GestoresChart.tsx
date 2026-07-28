@@ -1,5 +1,6 @@
 import React from 'react';
-import { ComposedChart, Area, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
+import { ComposedChart, Area, XAxis, YAxis, Tooltip, Legend, LabelList } from 'recharts';
+import { SafeResponsiveContainer } from '../../../SafeResponsiveContainer';
 import { ChartContainer } from './ChartContainer';
 import { CustomTooltip } from './CustomTooltip';
 import { Users } from 'lucide-react';
@@ -32,7 +33,7 @@ export const GestoresChart: React.FC<GestoresChartProps> = ({
       className="mb-8"
     >
       <div className="h-[260px] w-full sm:h-[340px]">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+        <SafeResponsiveContainer>
           <ComposedChart data={gestoresData} margin={{ top: 30, right: 6, left: -8, bottom: 5 }}>
              <defs>
               <linearGradient id="colorGestoresLine" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={COLORS.traditional} stopOpacity={0.4}/><stop offset="95%" stopColor={COLORS.traditional} stopOpacity={0}/></linearGradient>
@@ -54,7 +55,7 @@ export const GestoresChart: React.FC<GestoresChartProps> = ({
                  <LabelList dataKey="gestores" position="top" offset={15} style={{ fill: COLORS.traditional, fontSize: '11px', fontWeight: 'bold' }} formatter={(value: number) => value.toLocaleString()} />
             </Area>
           </ComposedChart>
-        </ResponsiveContainer>
+        </SafeResponsiveContainer>
       </div>
     </ChartContainer>
   );

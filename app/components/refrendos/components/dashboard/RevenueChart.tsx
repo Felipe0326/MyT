@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { SafeResponsiveContainer } from '../../../SafeResponsiveContainer';
 import { ChartContainer } from './ChartContainer';
 import { CustomTooltip } from './CustomTooltip';
 import { SeriesSummary } from './SeriesSummary';
@@ -306,7 +307,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
             </div>
           </div>
           <div className="h-[270px] w-full sm:h-[340px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <SafeResponsiveContainer>
               <AreaChart
                 data={monthlyRevenueData}
                 margin={{ top: 10, right: 8, left: -8, bottom: 0 }}
@@ -336,7 +337,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
                 <Area type="monotone" dataKey="year2026Projected" name="2026 Proyectado" stroke={COLORS.year2026Projected} fillOpacity={hiddenSeries.includes('year2026Projected') ? 0 : 0.1} strokeWidth={2} strokeDasharray="5 5" fill="none" dot={false} activeDot={{r: 4}} hide={hiddenSeries.includes('year2026Projected')} isAnimationActive={false} />
                 <Area type="monotone" dataKey="year2026CuentaComprobada" name="2026" stroke={COLORS.year2026} fillOpacity={hiddenSeries.includes('year2026CuentaComprobada') ? 0 : 1} fill="url(#color2026)" strokeWidth={4} dot={{ r: 8, fill: COLORS.year2026, stroke: '#fff', strokeWidth: 3 }} isAnimationActive={false} hide={hiddenSeries.includes('year2026CuentaComprobada')} />
               </AreaChart>
-            </ResponsiveContainer>
+            </SafeResponsiveContainer>
           </div>
           <p className="text-[10px] text-slate-400 italic mt-4">
             Fecha de conciliación (cuenta comprobada) con corte al 8 de julio del 2026 (primera semana)
@@ -412,7 +413,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
             </div>
           </div>
           <div className="h-[270px] w-full sm:h-[340px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <SafeResponsiveContainer>
               <AreaChart
                 data={LICENCIAS_DATA}
                 margin={{ top: 10, right: 8, left: -8, bottom: 0 }}
@@ -458,7 +459,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
                   hide={hiddenSeries.includes('year2026CuentaComprobada')}
                 />
               </AreaChart>
-            </ResponsiveContainer>
+            </SafeResponsiveContainer>
           </div>
           <p className="text-[10px] text-slate-400 italic mt-4">
             Datos consolidados según el catálogo de rubros de ingresos (CRI) del estado de Morelos con corte al 8 de julio del 2026 (primera semana)

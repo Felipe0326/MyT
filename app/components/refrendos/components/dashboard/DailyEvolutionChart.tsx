@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { SafeResponsiveContainer } from '../../../SafeResponsiveContainer';
 import { ChartContainer } from './ChartContainer';
 import { CustomTooltip } from './CustomTooltip';
 import { COLORS } from '../../constants';
@@ -50,7 +51,7 @@ export const DailyEvolutionChart: React.FC<DailyEvolutionChartProps> = ({
       description="Modalidad presencial vs digital. Selecciona un día para filtrar todo el tablero."
     >
       <div className="h-[260px] w-full sm:h-[340px]">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+        <SafeResponsiveContainer>
           <AreaChart
             data={dailyData}
             margin={{ top: 10, right: 6, left: -8, bottom: 0 }}
@@ -119,7 +120,7 @@ export const DailyEvolutionChart: React.FC<DailyEvolutionChartProps> = ({
               activeDot={{ r: 6, strokeWidth: 0, fill: COLORS.traditional }} isAnimationActive={false}
             />
           </AreaChart>
-        </ResponsiveContainer>
+        </SafeResponsiveContainer>
       </div>
     </ChartContainer>
   );

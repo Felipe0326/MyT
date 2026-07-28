@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { Activity, Smartphone, Building2, Loader2, RefreshCw, Car, CalendarDays } from 'lucide-react';
 import { motion, AnimatePresence } from '../MotionShim';
+import { ChartVisibilityProvider } from '../SafeResponsiveContainer';
 import { SmoothFilterSelect } from '../SmoothFilterSelect';
 
 import {
@@ -17,6 +18,8 @@ import {
   getJuneRevenueData,
   getJulyRevenueData,
   fetchRefrendoDashboard,
+  fetchRefrendoYearAxisMax,
+  clearRefrendoDashboardCache,
   EMPTY_REFRENDO_DASHBOARD,
   type RefrendoDashboardResponse,
   type RefrendoRecord,
@@ -47,7 +50,7 @@ const MONTH_CONFIG = {
 
 type MonthKey = keyof typeof MONTH_CONFIG;
 
-export const RefrendosDashboard = () => {
+export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) => {
   const [currentMonth, setCurrentMonth] = useState<MonthKey>('jul');
   const [showExtraCharts, setShowExtraCharts] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'analysis'>('dashboard');
@@ -63,6 +66,7 @@ export const RefrendosDashboard = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fixedYAxisMax, setFixedYAxisMax] = useState(0);
 
   const fetchData = useCallback(async (signal?: AbortSignal) => {
     setIsSyncing(true);
@@ -93,10 +97,33 @@ export const RefrendosDashboard = () => {
   }, [currentMonth, dateRange.start, dateRange.end, movement, hour, page, sortKey, sortDirection]);
 
   useEffect(() => {
+    if (!isActive) return;
+
     const controller = new AbortController();
-    void fetchData(controller.signal);
+    const timer = window.setTimeout(() => {
+      void fetchData(controller.signal);
+    }, 80);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [fetchData, isActive]);
+
+  useEffect(() => {
+    if (!isActive || fixedYAxisMax > 0) return;
+
+    const controller = new AbortController();
+    void fetchRefrendoYearAxisMax(2026, controller.signal)
+      .then((maximum) => setFixedYAxisMax(maximum))
+      .catch((axisError) => {
+        if ((axisError as Error).name !== 'AbortError') {
+          console.error('No fue posible calcular la escala anual de Refrendos:', axisError);
+        }
+      });
+
     return () => controller.abort();
-  }, [fetchData]);
+  }, [fixedYAxisMax, isActive]);
 
   const handleManualUpdate = async () => {
     if (isUpdating) return;
@@ -113,6 +140,8 @@ export const RefrendosDashboard = () => {
       console.error('No fue posible ejecutar la actualización manual:', updateError);
     } finally {
       clearTimeout(timeoutId);
+      clearRefrendoDashboardCache();
+      setFixedYAxisMax(0);
       await fetchData();
       setIsUpdating(false);
     }
@@ -273,7 +302,8 @@ export const RefrendosDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#fcfcfc] pb-12 font-sans text-brand-dark">
+    <ChartVisibilityProvider active={isActive}>
+      <div className="min-h-screen bg-[#fcfcfc] pb-12 font-sans text-brand-dark">
       {/* Header */}
       <header className="dashboard-sticky-header sticky border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-md">
         <div className="flex w-full flex-col gap-3 px-3 py-3 sm:px-5 lg:px-6 2xl:flex-row 2xl:items-center 2xl:justify-between">
@@ -374,7 +404,7 @@ export const RefrendosDashboard = () => {
               </div>
             </div>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-[1.25fr_1.25fr_1fr_1fr_auto]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4 2xl:grid-cols-[1.25fr_1.25fr_1fr_1fr_auto]">
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-600">
                 <CalendarDays className="h-3.5 w-3.5 text-[#526647]" /> Fecha inicial
@@ -425,7 +455,7 @@ export const RefrendosDashboard = () => {
             <button
               type="button"
               onClick={clearFilters}
-              className="h-[46px] w-full self-end rounded-full border border-slate-200 bg-slate-50 px-5 text-xs font-black uppercase tracking-wider text-[#526647] hover:bg-slate-100 sm:w-auto xl:w-full"
+              className="h-12 w-full shrink-0 self-end whitespace-nowrap rounded-xl border border-slate-200 bg-[#f7f8f4] px-6 text-xs font-black uppercase tracking-[0.12em] text-[#526647] transition-colors hover:bg-[#eef1ea] sm:col-span-2 xl:col-span-4 xl:w-[160px] xl:justify-self-end 2xl:col-span-1 2xl:w-full"
             >
               Limpiar
             </button>
@@ -463,7 +493,7 @@ export const RefrendosDashboard = () => {
               {/* Daily Evolution */}
               <DailyEvolutionChart 
                 data={filteredData}
-                maxProcedures={maxProcedures}
+                maxProcedures={Math.max(fixedYAxisMax, maxProcedures)}
                 formatCurrency={formatCurrency}
                 CustomLegend={CustomLegend}
                 CustomizedDot={CustomizedDot}
@@ -553,7 +583,8 @@ export const RefrendosDashboard = () => {
             </div>
       </main>
       )}
-    </div>
+      </div>
+    </ChartVisibilityProvider>
   );
 };
 

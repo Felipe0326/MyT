@@ -40,20 +40,20 @@ export function RefrendoRecordsTable({
 
   return (
     <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col items-stretch justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:px-5">
+      <div className="flex flex-col items-stretch justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-5 xl:flex-row xl:items-center">
         <div className="min-w-0">
           <h3 className="text-base font-bold text-slate-800">Registros de refrendo</h3>
           <p className="mt-1 text-xs leading-relaxed text-slate-500">
             La tabla conserva todos los registros que cumplen los filtros. Se muestran {pagination.pageSize} por página.
           </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="grid w-full grid-cols-1 gap-2 min-[520px]:grid-cols-[auto_minmax(0,1fr)_auto] xl:w-auto xl:min-w-[520px] xl:items-center">
           <button
             type="button"
             onClick={() => setRecordsVisible((current) => !current)}
             aria-expanded={recordsVisible}
             aria-controls="refrendo-records-content"
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-[#526647] hover:bg-[#f7f8f4] sm:w-auto"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-[#526647] transition-colors hover:bg-[#f7f8f4] min-[520px]:w-auto"
           >
             {recordsVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             {recordsVisible ? 'Ocultar tabla' : 'Mostrar tabla'}
@@ -62,12 +62,12 @@ export function RefrendoRecordsTable({
             type="button"
             disabled={exporting || pagination.total === 0}
             onClick={onExport}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#eef1ea] px-4 py-2 text-xs font-bold text-[#526647] transition hover:bg-[#e2e7dc] disabled:opacity-50 sm:w-auto"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#eef1ea] px-4 py-2 text-xs font-bold text-[#526647] transition-colors hover:bg-[#e2e7dc] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Exportar todos los filtrados
+            Exportar filtrados
           </button>
-          <span className="rounded-full bg-slate-100 px-4 py-2 text-center text-[10px] font-black uppercase tracking-wider text-slate-600">
+          <span className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-slate-100 px-4 py-2 text-center text-[10px] font-black uppercase tracking-wider text-slate-600">
             {pagination.total.toLocaleString('es-MX')} registros
           </span>
         </div>
@@ -176,7 +176,7 @@ export function RefrendoRecordsTable({
                 type="button"
                 disabled={!pagination.hasPrevious}
                 onClick={() => onPageChange(Math.max(1, pagination.page - 1))}
-                className="min-h-11 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-[#526647] disabled:opacity-50"
+                className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-[#526647] transition-colors hover:bg-[#f7f8f4] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Anterior
               </button>
@@ -184,7 +184,7 @@ export function RefrendoRecordsTable({
                 type="button"
                 disabled={!pagination.hasNext}
                 onClick={() => onPageChange(pagination.page + 1)}
-                className="min-h-11 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-[#526647] disabled:opacity-50"
+                className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-[#526647] transition-colors hover:bg-[#f7f8f4] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Siguiente
               </button>

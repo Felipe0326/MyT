@@ -55,9 +55,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No fue posible cargar la administración de usuarios." }, { status: 503 });
   }
 
+  const sections = (await sectionsResponse.json()) as Array<{
+    id: string;
+    slug: string;
+    title: string;
+    availability: "disponible" | "proximamente";
+    is_active: boolean;
+  }>;
+
   return NextResponse.json({
     users: await profilesResponse.json(),
-    sections: await sectionsResponse.json(),
+    sections: sections.map((section) => (
+      section.slug === "dashboard-2"
+        ? { ...section, availability: "disponible" as const }
+        : section
+    )),
     permissions: await permissionsResponse.json(),
     invitations: await invitationsResponse.json(),
     invitationPermissions: await invitationPermissionsResponse.json(),

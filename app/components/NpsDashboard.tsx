@@ -99,7 +99,6 @@ export function NpsDashboard() {
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState<NpsSortKey>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [recordsVisible, setRecordsVisible] = useState(true);
@@ -136,7 +135,6 @@ export function NpsDashboard() {
         }
       } finally {
         if (!controller.signal.aborted) {
-          setLoading(false);
           setRefreshing(false);
         }
       }
@@ -258,17 +256,6 @@ export function NpsDashboard() {
     } finally {
       setExporting(false);
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-[#f5f4f0]">
-        <div className="flex items-center gap-3 text-[#526647]">
-          <Loader2 className="h-7 w-7 animate-spin" />
-          <span className="font-semibold">Cargando tablero NPS…</span>
-        </div>
-      </div>
-    );
   }
 
   return (

@@ -276,7 +276,7 @@ export const RefrendosDashboard = () => {
     <div className="min-h-screen bg-[#fcfcfc] pb-12 font-sans text-brand-dark">
       {/* Header */}
       <header className="dashboard-sticky-header sticky border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-md">
-        <div className="flex w-full flex-col gap-3 px-3 py-3 sm:px-5 lg:px-6 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex w-full flex-col gap-3 px-3 py-3 sm:px-5 lg:px-6 2xl:flex-row 2xl:items-center 2xl:justify-between">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -303,7 +303,7 @@ export const RefrendosDashboard = () => {
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="scrollbar-hide flex w-full items-center gap-2 overflow-x-auto pb-1 xl:w-auto xl:justify-end xl:pb-0"
+            className="scrollbar-hide flex w-full min-w-0 items-center gap-2 overflow-x-auto pb-1 2xl:w-auto 2xl:justify-end 2xl:pb-0"
           >
             <button
               id="btn-force-update"
@@ -312,7 +312,7 @@ export const RefrendosDashboard = () => {
               aria-label="Actualizar información de refrendos"
               title="Actualizar información"
               className={`
-                flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border px-3 py-2 transition-all
+                flex min-h-10 min-w-[112px] shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-3 py-2 transition-all
                 ${isUpdating || isSyncing 
                   ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' 
                   : 'bg-white text-brand-dark border-slate-200 hover:border-brand-primary hover:text-brand-primary active:scale-95 shadow-sm'}
@@ -323,7 +323,7 @@ export const RefrendosDashboard = () => {
               ) : (
                 <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
               )}
-              <span className="hidden text-xs font-bold sm:inline">Actualizar</span>
+              <span className="text-xs font-bold">Actualizar</span>
             </button>
 
             <div className="flex shrink-0 rounded-xl border border-slate-200 bg-slate-100 p-1">

@@ -209,7 +209,12 @@ async function loadSections(userId: string, role: AppRole): Promise<AppSection[]
     "app_sections_tym?select=id,slug,title,description,icon,sort_order,availability,is_active&is_active=eq.true&order=sort_order.asc",
   );
   if (!sectionsResponse.ok) return [];
-  const sections = (await sectionsResponse.json()) as Array<Omit<AppSection, "can_view" | "can_edit" | "can_export">>;
+  const rawSections = (await sectionsResponse.json()) as Array<Omit<AppSection, "can_view" | "can_edit" | "can_export">>;
+  const sections = rawSections.map((section) => (
+    section.slug === "dashboard-2"
+      ? { ...section, availability: "disponible" as const }
+      : section
+  ));
   if (role === "administrador") {
     return sections.map((section) => ({ ...section, can_view: true, can_edit: true, can_export: true }));
   }

@@ -131,8 +131,11 @@ export function PortalApp() {
 }
 
 function ApplicationShell({ session, idleWarning, onLogout }: { session: SessionData; idleWarning: boolean; onLogout: () => Promise<void> }) {
-  const firstSection = session.sections.find((section) => section.availability === "disponible")?.slug ?? session.sections[0]?.slug ?? "empty";
+  const firstSection = session.sections.find((section) => section.availability === "disponible" || section.slug === "dashboard-2")?.slug ?? session.sections[0]?.slug ?? "empty";
   const [active, setActive] = useState(firstSection);
+  const [visitedDashboards, setVisitedDashboards] = useState<string[]>(
+    firstSection === "dashboard-nps" || firstSection === "dashboard-2" ? [firstSection] : [],
+  );
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -148,6 +151,9 @@ function ApplicationShell({ session, idleWarning, onLogout }: { session: Session
   }, [profileOpen]);
 
   function selectSection(slug: string) {
+    if (slug === "dashboard-nps" || slug === "dashboard-2") {
+      setVisitedDashboards((current) => current.includes(slug) ? current : [...current, slug]);
+    }
     setActive(slug);
     setMobileOpen(false);
     setProfileOpen(false);
@@ -209,8 +215,16 @@ function ApplicationShell({ session, idleWarning, onLogout }: { session: Session
         <header className="mobile-header"><button onClick={() => setMobileOpen(true)} aria-label="Abrir menú"><Menu size={22} /></button><div className="mobile-wordmark"><strong>Movilidad</strong><span>y Transporte</span></div><button className="mobile-profile-button" type="button" onClick={() => setProfileOpen(true)} aria-label="Abrir perfil"><div className="avatar small">{initials(session.user.fullName)}</div></button></header>
         {idleWarning && <div className="idle-banner"><Clock3 size={17} /><span>Tu sesión se cerrará pronto por inactividad. Interactúa con la página para continuar.</span></div>}
         <main className={`workspace-content ${active === "dashboard-nps" || active === "dashboard-2" ? "full-bleed" : ""}`}>
-          {active === "dashboard-nps" && <NpsDashboard />}
-          {active === "dashboard-2" && <RefrendosDashboard />}
+          {visitedDashboards.includes("dashboard-nps") && (
+            <div hidden={active !== "dashboard-nps"}>
+              <NpsDashboard />
+            </div>
+          )}
+          {visitedDashboards.includes("dashboard-2") && (
+            <div hidden={active !== "dashboard-2"}>
+              <RefrendosDashboard />
+            </div>
+          )}
           {active === "usuarios" && session.user.role === "administrador" && <UsersAdmin csrfToken={session.csrfToken} currentUserId={session.user.id} />}
           {activeSection?.availability === "proximamente" && active !== "dashboard-2" && <ComingSoon section={activeSection} />}
           {active === "empty" && <EmptyAccess />}

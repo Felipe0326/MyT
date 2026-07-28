@@ -32,6 +32,10 @@ type AdminPayload = {
   invitationPermissions: Array<{ invitation_id: string; section_id: string }>;
 };
 
+function isSectionAvailable(section: SectionRecord) {
+  return section.availability === "disponible" || section.slug === "dashboard-2";
+}
+
 export function UsersAdmin({ csrfToken, currentUserId }: { csrfToken: string; currentUserId: string }) {
   const [data, setData] = useState<AdminPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -174,12 +178,20 @@ function InviteForm({ sections, onCancel, onSubmit }: { sections: SectionRecord[
     event.preventDefault();
     setSaving(true);
     setError("");
-    try { await onSubmit({ email, fullName, role, sectionIds }); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "No fue posible crear la invitación."); }
-    finally { setSaving(false); }
+    try {
+      await onSubmit({ email, fullName, role, sectionIds });
+      setEmail("");
+      setFullName("");
+      setRole("consulta");
+      setSectionIds([]);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "No fue posible crear la invitación.");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  return <section className="surface invite-form-card"><div className="card-heading"><div><p className="eyebrow">Acceso nuevo</p><h2>Invitar usuario</h2></div><button className="text-button" onClick={onCancel}>Cancelar</button></div><form className="invite-form" onSubmit={submit}><label><span>Nombre completo</span><input value={fullName} onChange={(event) => setFullName(event.target.value)} minLength={2} required /></label><label><span>Correo institucional</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label><span>Rol</span><select value={role} onChange={(event) => setRole(event.target.value as AppRole)}><option value="consulta">Consulta</option><option value="editor">Editor</option><option value="administrador">Administrador</option></select></label><fieldset><legend>Secciones permitidas</legend><div className="permission-grid">{sections.map((section) => <label key={section.id} className="permission-option"><input type="checkbox" checked={sectionIds.includes(section.id)} onChange={() => setSectionIds((current) => current.includes(section.id) ? current.filter((id) => id !== section.id) : [...current, section.id])} /><span><strong>{section.title}</strong><small>{section.availability === "disponible" ? "Disponible" : "Próximamente"}</small></span></label>)}</div></fieldset>{error && <div className="form-error">{error}</div>}<button className="primary-button" disabled={saving}>{saving ? "Creando…" : "Crear y enviar invitación"}</button></form></section>;
+  return <section className="surface invite-form-card"><div className="card-heading"><div><p className="eyebrow">Acceso nuevo</p><h2>Invitar usuario</h2></div><button className="text-button" onClick={onCancel}>Cancelar</button></div><form className="invite-form" onSubmit={submit}><label><span>Nombre completo</span><input value={fullName} onChange={(event) => setFullName(event.target.value)} minLength={2} required /></label><label><span>Correo institucional</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label><span>Rol</span><select value={role} onChange={(event) => setRole(event.target.value as AppRole)}><option value="consulta">Consulta</option><option value="editor">Editor</option><option value="administrador">Administrador</option></select></label><fieldset><legend>Secciones permitidas</legend><div className="permission-grid">{sections.map((section) => <label key={section.id} className="permission-option"><input type="checkbox" checked={sectionIds.includes(section.id)} onChange={() => setSectionIds((current) => current.includes(section.id) ? current.filter((id) => id !== section.id) : [...current, section.id])} /><span><strong>{section.title}</strong><small>{isSectionAvailable(section) ? "Disponible" : "Próximamente"}</small></span></label>)}</div></fieldset>{error && <div className="form-error">{error}</div>}<button className="primary-button" disabled={saving}>{saving ? "Creando…" : "Crear y enviar invitación"}</button></form></section>;
 }
 
 function UserEditor({ user, sections, initialSections, isCurrent, onSave }: { user: UserRecord; sections: SectionRecord[]; initialSections: string[]; isCurrent: boolean; onSave: (body: { userId: string; fullName: string; role: AppRole; status: "activo" | "inactivo"; sectionIds: string[] }) => Promise<void> }) {
@@ -191,13 +203,29 @@ function UserEditor({ user, sections, initialSections, isCurrent, onSave }: { us
   const [saving, setSaving] = useState(false);
   const changed = useMemo(() => fullName !== user.full_name || role !== user.role || status !== user.status || [...sectionIds].sort().join() !== [...initialSections].sort().join(), [fullName, role, status, sectionIds, user, initialSections]);
 
+  useEffect(() => {
+    if (editing) return;
+    setFullName(user.full_name);
+    setRole(user.role);
+    setStatus(user.status);
+    setSectionIds(initialSections);
+  }, [editing, user.full_name, user.role, user.status, initialSections]);
+
+  function cancelEditing() {
+    setFullName(user.full_name);
+    setRole(user.role);
+    setStatus(user.status);
+    setSectionIds(initialSections);
+    setEditing(false);
+  }
+
   async function save() {
     setSaving(true);
     try { await onSave({ userId: user.id, fullName, role, status, sectionIds }); setEditing(false); }
     finally { setSaving(false); }
   }
 
-  return <article className={`user-row ${editing ? "editing" : ""}`}><div className="avatar">{initials(user.full_name)}</div><div className="user-primary">{editing ? <input value={fullName} onChange={(event) => setFullName(event.target.value)} /> : <><strong>{user.full_name}{isCurrent && <em>Tú</em>}</strong><span>{user.email}</span></>}</div>{editing ? <><select value={role} disabled={isCurrent} onChange={(event) => setRole(event.target.value as AppRole)}><option value="consulta">Consulta</option><option value="editor">Editor</option><option value="administrador">Administrador</option></select><select value={status} disabled={isCurrent} onChange={(event) => setStatus(event.target.value as "activo" | "inactivo")}><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select><div className="user-permissions">{sections.map((section) => <label key={section.id}><input type="checkbox" checked={sectionIds.includes(section.id)} onChange={() => setSectionIds((current) => current.includes(section.id) ? current.filter((id) => id !== section.id) : [...current, section.id])} /> {section.title}</label>)}</div><button className="primary-button small-button" disabled={saving || !changed} onClick={save}><Save size={14} /> {saving ? "Guardando" : "Guardar"}</button><button className="text-button" onClick={() => setEditing(false)}>Cancelar</button></> : <><span className={`role-badge role-${user.role}`}>{roleLabel(user.role)}</span><span className={`status-badge status-${user.status}`}>{user.status === "activo" ? "Activo" : "Inactivo"}</span><span className="section-count">{initialSections.length || (user.role === "administrador" ? sections.length : 0)} tableros</span><button className="secondary-button" onClick={() => setEditing(true)}><UserRoundCog size={15} /> Administrar</button></>}</article>;
+  return <article className={`user-row ${editing ? "editing" : ""}`}><div className="avatar">{initials(user.full_name)}</div><div className="user-primary">{editing ? <input value={fullName} onChange={(event) => setFullName(event.target.value)} /> : <><strong>{user.full_name}{isCurrent && <em>Tú</em>}</strong><span>{user.email}</span></>}</div>{editing ? <><select value={role} disabled={isCurrent} onChange={(event) => setRole(event.target.value as AppRole)}><option value="consulta">Consulta</option><option value="editor">Editor</option><option value="administrador">Administrador</option></select><select value={status} disabled={isCurrent} onChange={(event) => setStatus(event.target.value as "activo" | "inactivo")}><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select><div className="user-permissions">{sections.map((section) => <label key={section.id}><input type="checkbox" checked={sectionIds.includes(section.id)} onChange={() => setSectionIds((current) => current.includes(section.id) ? current.filter((id) => id !== section.id) : [...current, section.id])} /> {section.title}</label>)}</div><button className="primary-button small-button" disabled={saving || !changed} onClick={save}><Save size={14} /> {saving ? "Guardando" : "Guardar"}</button><button className="text-button" onClick={cancelEditing}>Cancelar</button></> : <><span className={`role-badge role-${user.role}`}>{roleLabel(user.role)}</span><span className={`status-badge status-${user.status}`}>{user.status === "activo" ? "Activo" : "Inactivo"}</span><span className="section-count">{initialSections.length || (user.role === "administrador" ? sections.length : 0)} tableros</span><button className="secondary-button" onClick={() => setEditing(true)}><UserRoundCog size={15} /> Administrar</button></>}</article>;
 }
 
 function roleLabel(role: AppRole) {

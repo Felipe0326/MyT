@@ -306,35 +306,49 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
       <div className="min-h-screen bg-[#fcfcfc] pb-12 font-sans text-brand-dark">
       {/* Header */}
       <header className="dashboard-sticky-header sticky border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-md">
-        <div className="flex w-full flex-col gap-3 px-3 py-3 sm:px-5 lg:px-6 2xl:flex-row 2xl:items-center 2xl:justify-between">
-          <motion.div 
+        <div className="flex w-full flex-col gap-4 px-3 py-3 sm:px-5 sm:py-4 lg:px-6 xl:flex-row xl:items-center xl:justify-between">
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex min-w-0 items-center gap-3 sm:gap-4"
           >
-            <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-dark shadow-lg shadow-brand-dark/20">
+            <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-dark shadow-lg shadow-brand-dark/20 sm:h-11 sm:w-11 sm:rounded-2xl">
               <Car className="h-6 w-6 text-brand-secondary" />
               {isSyncing && (
-                <div className="absolute -top-1 -right-1">
-                   <Loader2 className="h-4 w-4 text-brand-primary animate-spin" />
+                <div className="absolute -right-1 -top-1">
+                  <Loader2 className="h-4 w-4 animate-spin text-brand-primary" />
                 </div>
               )}
             </div>
+
             <div className="min-w-0">
-              <h1 className="text-balance text-base font-bold leading-tight tracking-tight text-brand-dark sm:text-xl">Tablero Movilidad y Transporte Recaudación 2026</h1>
-              <div className="flex flex-col">
-                <p className="text-[10px] sm:text-xs text-brand-primary font-semibold tracking-wide uppercase mt-1">
-                  Gestión de Trámites {MONTH_CONFIG[currentMonth].name} 2026
-                </p>
-              </div>
+              <h1 className="text-balance text-base font-bold leading-tight tracking-tight text-brand-dark sm:text-xl">
+                Tablero Movilidad y Transporte Recaudación 2026
+              </h1>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-brand-primary sm:text-xs">
+                Gestión de Trámites {MONTH_CONFIG[currentMonth].name} 2026
+              </p>
             </div>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="scrollbar-hide flex w-full min-w-0 items-center gap-2 overflow-x-auto pb-1 2xl:w-auto 2xl:justify-end 2xl:pb-0"
+            className="flex w-full min-w-0 flex-col gap-3 xl:w-auto xl:flex-row xl:items-center xl:justify-end"
           >
+            <div className="scrollbar-hide -mx-1 flex w-[calc(100%+0.5rem)] min-w-0 items-center overflow-x-auto px-1 pb-1 xl:mx-0 xl:w-auto xl:flex-none xl:overflow-visible xl:px-0 xl:pb-0">
+              <div className="inline-flex min-w-max shrink-0 items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-1">
+                {(Object.keys(MONTH_CONFIG) as MonthKey[]).map((m) => (
+                  <ToggleBtn
+                    key={m}
+                    active={currentMonth === m}
+                    onClick={() => changeMonth(m)}
+                    label={MONTH_CONFIG[m].short}
+                  />
+                ))}
+              </div>
+            </div>
+
             <button
               id="btn-force-update"
               onClick={handleManualUpdate}
@@ -342,10 +356,10 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
               aria-label="Actualizar información de refrendos"
               title="Actualizar información"
               className={`
-                flex min-h-10 min-w-[112px] shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-3 py-2 transition-all
-                ${isUpdating || isSyncing 
-                  ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' 
-                  : 'bg-white text-brand-dark border-slate-200 hover:border-brand-primary hover:text-brand-primary active:scale-95 shadow-sm'}
+                flex min-h-11 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-4 py-2.5 transition-all sm:w-auto sm:min-w-[118px]
+                ${isUpdating || isSyncing
+                  ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+                  : 'border-slate-200 bg-white text-brand-dark shadow-sm hover:border-brand-primary hover:text-brand-primary active:scale-95'}
               `}
             >
               {isUpdating ? (
@@ -355,17 +369,6 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
               )}
               <span className="text-xs font-bold">Actualizar</span>
             </button>
-
-            <div className="flex shrink-0 rounded-xl border border-slate-200 bg-slate-100 p-1">
-              {(Object.keys(MONTH_CONFIG) as MonthKey[]).map((m) => (
-                <ToggleBtn 
-                  key={m}
-                  active={currentMonth === m} 
-                  onClick={() => changeMonth(m)}
-                  label={MONTH_CONFIG[m].short}
-                />
-              ))}
-            </div>
           </motion.div>
         </div>
         
@@ -404,7 +407,7 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
               </div>
             </div>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4 2xl:grid-cols-[1.25fr_1.25fr_1fr_1fr_auto]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 xl:grid-cols-[minmax(150px,1.15fr)_minmax(150px,1.15fr)_minmax(170px,1fr)_minmax(150px,0.9fr)_auto] xl:items-end">
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-600">
                 <CalendarDays className="h-3.5 w-3.5 text-[#526647]" /> Fecha inicial
@@ -455,7 +458,7 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
             <button
               type="button"
               onClick={clearFilters}
-              className="h-12 w-full shrink-0 self-end whitespace-nowrap rounded-xl border border-slate-200 bg-[#f7f8f4] px-6 text-xs font-black uppercase tracking-[0.12em] text-[#526647] transition-colors hover:bg-[#eef1ea] sm:col-span-2 xl:col-span-4 xl:w-[160px] xl:justify-self-end 2xl:col-span-1 2xl:w-full"
+              className="h-12 w-full shrink-0 self-end whitespace-nowrap rounded-xl border border-slate-200 bg-[#f7f8f4] px-5 text-xs font-black uppercase tracking-[0.12em] text-[#526647] transition-colors hover:bg-[#eef1ea] sm:col-span-2 lg:col-span-4 lg:w-[160px] lg:justify-self-end xl:col-span-1 xl:w-[136px] xl:justify-self-auto"
             >
               Limpiar
             </button>

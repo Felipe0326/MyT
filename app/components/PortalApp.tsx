@@ -217,7 +217,7 @@ function ApplicationShell({ session, idleWarning, onLogout }: { session: Session
         <main className={`workspace-content ${active === "dashboard-nps" || active === "dashboard-2" ? "full-bleed" : ""}`}>
           {visitedDashboards.includes("dashboard-nps") && (
             <div hidden={active !== "dashboard-nps"}>
-              <NpsDashboard isActive={active === "dashboard-nps"} />
+              <NpsDashboard isActive={active === "dashboard-nps"} csrfToken={session.csrfToken} />
             </div>
           )}
           {visitedDashboards.includes("dashboard-2") && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Activity,
@@ -12,6 +12,7 @@ import {
   Download,
   Loader2,
   MapPin,
+  RefreshCw,
   MessageSquare,
   Star,
   ThumbsUp,
@@ -90,7 +91,15 @@ const MONTHS = [
   { label: "Julio", start: "2026-07-01", end: "2026-07-31" },
 ] as const;
 
-export function NpsDashboard({ isActive = true }: { isActive?: boolean }) {
+const AUTO_REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+
+export function NpsDashboard({
+  isActive = true,
+  csrfToken,
+}: {
+  isActive?: boolean;
+  csrfToken: string;
+}) {
   const [dashboard, setDashboard] = useState<DashboardResponse>(EMPTY_RESPONSE);
   const [selectedDependencia, setSelectedDependencia] = useState("");
   const [selectedSucursal, setSelectedSucursal] = useState("");
@@ -100,53 +109,69 @@ export function NpsDashboard({ isActive = true }: { isActive?: boolean }) {
   const [sortKey, setSortKey] = useState<NpsSortKey>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [refreshing, setRefreshing] = useState(false);
+  const [triggeringUpdate, setTriggeringUpdate] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [recordsVisible, setRecordsVisible] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const loadDashboard = useCallback(async (signal?: AbortSignal) => {
+    setRefreshing(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: "20",
+        sort: sortKey,
+        direction: sortDirection,
+        refresh: String(Date.now()),
+      });
+      if (selectedDependencia) params.set("dependencia", selectedDependencia);
+      if (selectedSucursal) params.set("sucursal", selectedSucursal);
+      if (selectedRecommendation) params.set("recomienda", selectedRecommendation);
+      if (dateRange.start) params.set("dateFrom", dateRange.start);
+      if (dateRange.end) params.set("dateTo", dateRange.end);
+
+      const response = await fetch(`/api/survey-data?${params.toString()}`, {
+        cache: "no-store",
+        credentials: "same-origin",
+        signal,
+      });
+      const payload = (await response.json()) as DashboardResponse & { error?: string };
+      if (!response.ok) throw new Error(payload.error || "No fue posible consultar NPS.");
+      setDashboard(payload);
+      setError(null);
+    } catch (requestError) {
+      if ((requestError as Error).name !== "AbortError") {
+        setError((requestError as Error).message);
+      }
+    } finally {
+      if (!signal?.aborted) setRefreshing(false);
+    }
+  }, [selectedDependencia, selectedSucursal, selectedRecommendation, dateRange.start, dateRange.end, page, sortKey, sortDirection]);
 
   useEffect(() => {
     if (!isActive) return;
 
     const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      setRefreshing(true);
-      try {
-        const params = new URLSearchParams({
-          page: String(page),
-          pageSize: "20",
-          sort: sortKey,
-          direction: sortDirection,
-        });
-        if (selectedDependencia) params.set("dependencia", selectedDependencia);
-        if (selectedSucursal) params.set("sucursal", selectedSucursal);
-        if (selectedRecommendation) params.set("recomienda", selectedRecommendation);
-        if (dateRange.start) params.set("dateFrom", dateRange.start);
-        if (dateRange.end) params.set("dateTo", dateRange.end);
-
-        const response = await fetch(`/api/survey-data?${params.toString()}`, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || "No fue posible consultar NPS.");
-        setDashboard(payload as DashboardResponse);
-        setError(null);
-      } catch (requestError) {
-        if ((requestError as Error).name !== "AbortError") {
-          setError((requestError as Error).message);
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setRefreshing(false);
-        }
-      }
+    const timer = window.setTimeout(() => {
+      void loadDashboard(controller.signal);
     }, 120);
 
     return () => {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [isActive, selectedDependencia, selectedSucursal, selectedRecommendation, dateRange.start, dateRange.end, page, sortKey, sortDirection]);
+  }, [isActive, loadDashboard]);
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    const interval = window.setInterval(() => {
+      void loadDashboard();
+    }, AUTO_REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [isActive, loadDashboard]);
 
   const trendData = useMemo(
     () => dashboard.trend.map((row) => ({
@@ -214,6 +239,35 @@ export function NpsDashboard({ isActive = true }: { isActive?: boolean }) {
     setPage(1);
   }
 
+  async function refreshNpsData() {
+    if (triggeringUpdate) return;
+
+    setTriggeringUpdate(true);
+    setUpdateMessage(null);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/nps/refresh", {
+        method: "POST",
+        headers: { "x-csrf-token": csrfToken },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const payload = (await response.json()) as { error?: string; message?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || "No fue posible ejecutar la actualización de NPS.");
+      }
+
+      await wait(1200);
+      await loadDashboard();
+      setUpdateMessage(payload.message || "NPS actualizado correctamente.");
+    } catch (updateError) {
+      setError((updateError as Error).message);
+    } finally {
+      setTriggeringUpdate(false);
+    }
+  }
+
   async function exportFilteredRecords() {
     setExporting(true);
     setError(null);
@@ -226,8 +280,11 @@ export function NpsDashboard({ isActive = true }: { isActive?: boolean }) {
       if (dateRange.end) params.set("dateTo", dateRange.end);
 
       const response = await fetch(`/api/nps/export?${params.toString()}`, { cache: "no-store" });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "No fue posible exportar NPS.");
+      const payload = (await response.json()) as NpsComment[] | { error?: string };
+      if (!response.ok) {
+        const errorPayload = payload as { error?: string };
+        throw new Error(errorPayload.error || "No fue posible exportar NPS.");
+      }
 
       const records = payload as NpsComment[];
       const headers = [
@@ -275,25 +332,42 @@ export function NpsDashboard({ isActive = true }: { isActive?: boolean }) {
             </div>
           </div>
 
-          <div className="scrollbar-hide -mx-1 flex w-full max-w-full items-center gap-1 overflow-x-auto px-1 pb-1 xl:mx-0 xl:w-auto xl:gap-2 xl:px-0">
-            {MONTHS.map((month) => {
-              const active = dateRange.start === month.start && dateRange.end === month.end;
-              return (
-                <button
-                  key={month.label}
-                  type="button"
-                  onClick={() => selectMonth(month.start, month.end)}
-                  className={`flex min-h-10 shrink-0 items-center gap-1.5 border-b-2 px-2.5 py-2 text-xs font-semibold transition sm:gap-2 sm:px-3 sm:text-sm ${
-                    active
-                      ? "border-[#526647] text-[#526647]"
-                      : "border-transparent text-[#61685d] hover:border-[#bbc5b3] hover:text-[#526647]"
-                  }`}
-                >
-                  <Calendar className="h-4 w-4" />
-                  {month.label}
-                </button>
-              );
-            })}
+          <div className="flex w-full min-w-0 flex-col gap-3 xl:w-auto xl:flex-row xl:items-center">
+            <div className="scrollbar-hide -mx-1 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1 pb-1 xl:mx-0 xl:gap-2 xl:px-0">
+              {MONTHS.map((month) => {
+                const active = dateRange.start === month.start && dateRange.end === month.end;
+                return (
+                  <button
+                    key={month.label}
+                    type="button"
+                    onClick={() => selectMonth(month.start, month.end)}
+                    className={`flex min-h-10 shrink-0 items-center gap-1.5 border-b-2 px-2.5 py-2 text-xs font-semibold transition sm:gap-2 sm:px-3 sm:text-sm ${
+                      active
+                        ? "border-[#526647] text-[#526647]"
+                        : "border-transparent text-[#61685d] hover:border-[#bbc5b3] hover:text-[#526647]"
+                    }`}
+                  >
+                    <Calendar className="h-4 w-4" />
+                    {month.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void refreshNpsData()}
+              disabled={triggeringUpdate}
+              className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#526647] px-5 py-2.5 text-xs font-black uppercase tracking-[0.14em] text-white shadow-sm transition hover:bg-[#46583d] disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto"
+              title="Ejecutar el flujo de n8n y volver a consultar los datos de NPS"
+            >
+              {triggeringUpdate ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              {triggeringUpdate ? "Actualizando…" : "Actualizar"}
+            </button>
           </div>
         </div>
       </header>
@@ -303,6 +377,12 @@ export function NpsDashboard({ isActive = true }: { isActive?: boolean }) {
           <div className="flex items-center gap-3 rounded-2xl border border-[#e8cbd1] bg-[#fff5f7] px-5 py-4 text-[#833947]">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <span>{error}</span>
+          </div>
+        )}
+        {updateMessage && !error && (
+          <div className="flex items-center gap-3 rounded-2xl border border-[#cfdac9] bg-[#f3f7f0] px-5 py-4 text-[#46583d]" role="status" aria-live="polite">
+            <RefreshCw className="h-5 w-5 shrink-0" />
+            <span>{updateMessage}</span>
           </div>
         )}
 
@@ -720,6 +800,10 @@ function monthLabel(value: string): string {
 function displayDate(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "N/A" : format(date, "dd MMM yyyy HH:mm");
+}
+
+function wait(milliseconds: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
 function downloadCsv(filename: string, headers: Array<string | number>, rows: Array<Array<unknown>>) {

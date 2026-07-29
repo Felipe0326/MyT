@@ -13,6 +13,7 @@
   font-display: swap;
 }
 
+
 @font-face {
   font-family: "Twogether Sans";
   src: url("/fonts/TwogetherSans/TwogetherSans-Medium.otf") format("opentype");
@@ -113,7 +114,6 @@
   --color-dash-success: #526647;
   --color-dash-info: #526647;
   --color-dash-warning: #8b3c43;
-
   --color-brand-primary: #74785c;
   --color-brand-secondary: #d3bc8d;
   --color-brand-dark: #2e332a;

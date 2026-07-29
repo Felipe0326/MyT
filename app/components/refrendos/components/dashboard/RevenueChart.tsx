@@ -31,7 +31,7 @@ const LICENCIAS_DATA = [
   { monthName: 'Abr', year2026CuentaComprobada: 7450965, year2026Projected: 7071288, cri: '4.3.4.13', concepto: 'LICENCIAS PARA MANEJAR VEHÍCULOS' },
   { monthName: 'May', year2026CuentaComprobada: 9860605, year2026Projected: 7366126, cri: '4.3.4.13', concepto: 'LICENCIAS PARA MANEJAR VEHÍCULOS' },
   { monthName: 'Jun', year2026CuentaComprobada: 9165349, year2026Projected: 9195276, cri: '4.3.4.13', concepto: 'LICENCIAS PARA MANEJAR VEHÍCULOS' },
-  { monthName: 'Jul', year2026CuentaComprobada: 1739684, year2026Projected: 9872629, cri: '4.3.4.13', concepto: 'LICENCIAS PARA MANEJAR VEHÍCULOS' },
+  { monthName: 'Jul', year2026CuentaComprobada: 8340924, year2026Projected: 9872629, cri: '4.3.4.13', concepto: 'LICENCIAS PARA MANEJAR VEHÍCULOS' },
   { monthName: 'Ago', year2026CuentaComprobada: undefined, year2026Projected: 11633176, cri: '4.3.4.13', concepto: 'LICENCIAS PARA MANEJAR VEHÍCULOS' },
   { monthName: 'Sep', year2026CuentaComprobada: undefined, year2026Projected: 11973087, cri: '4.3.4.13', concepto: 'LICENCIAS PARA MANEJAR VEHÍCULOS' },
   { monthName: 'Oct', year2026CuentaComprobada: undefined, year2026Projected: 9353328, cri: '4.3.4.13', concepto: 'LICENCIAS PARA MANEJAR VEHÍCULOS' },

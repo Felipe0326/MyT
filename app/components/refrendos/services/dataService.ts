@@ -6,7 +6,7 @@ const monthlyRevenueDataRaw = [
   { monthName: 'Abr', year2022: 54443364, year2023: 62299201, year2024: 50913256, year2025: 70383034, year2026Projected: 62922449, year2026FechaPago: 64669121, year2026CuentaComprobada: 64669121 },
   { monthName: 'May', year2022: 27947695, year2023: 28572289, year2024: 22040018, year2025: 57483876, year2026Projected: 41253019, year2026CuentaComprobada: 63761725.75 },
   { monthName: 'Jun', year2022: 20761817, year2023: 17890399, year2024: 21835686, year2025: 52111005, year2026Projected: 38359845, year2026CuentaComprobada: 24909651 },
-  { monthName: 'Jul', year2022: 14422130, year2023: 11050696, year2024: 19766078, year2025: 21486247, year2026Projected: 21399643, year2026CuentaComprobada: 2606912 },
+  { monthName: 'Jul', year2022: 14422130, year2023: 11050696, year2024: 19766078, year2025: 21486247, year2026Projected: 21399643, year2026CuentaComprobada: 8773312 },
   { monthName: 'Ago', year2022: 11425032, year2023: 11903074, year2024: 17239293, year2025: 10616958, year2026Projected: 14450429 },
   { monthName: 'Sep', year2022: 8847161, year2023: 8922391, year2024: 12605940, year2025: 6877293, year2026Projected: 15521577 },
   { monthName: 'Oct', year2022: 7674302, year2023: 8712051, year2024: 3507942, year2025: 6355502, year2026Projected: 10782916 },

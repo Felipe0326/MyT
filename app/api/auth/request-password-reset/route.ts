@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { isEmailDeliveryConfigured, sendPasswordResetEmail } from "../../../../lib/email";
 import {
   clientRateLimitRule,
@@ -21,8 +21,10 @@ type Profile = {
   full_name: string;
 };
 
-const GENERIC_MESSAGE =
-  "Si existe una cuenta activa con ese correo, recibirás instrucciones para restablecer la contraseña.";
+const SUCCESS_MESSAGE =
+  "Recibirás instrucciones para restablecer la contraseña a través de tu correo.";
+const ACCOUNT_NOT_FOUND_MESSAGE =
+  "No encontramos una cuenta activa con ese correo. Verifica la dirección e inténtalo nuevamente.";
 
 export async function POST(request: NextRequest) {
   if (!verifyMutationOrigin(request)) {
@@ -75,21 +77,32 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (!isEmailDeliveryConfigured()) return genericResponse();
+    if (!isEmailDeliveryConfigured()) {
+      return errorResponse(
+        "El servicio de correo no está disponible temporalmente. Inténtalo más tarde.",
+        503,
+      );
+    }
 
     const profileResponse = await serviceRest(
       `profiles_tym?email=eq.${encodeURIComponent(input.data.email)}&status=eq.activo&select=id,email,full_name&limit=1`,
     );
-    if (!profileResponse.ok) return genericResponse();
+    if (!profileResponse.ok) {
+      return errorResponse(
+        "No fue posible verificar el correo en este momento. Inténtalo nuevamente.",
+        503,
+      );
+    }
+
     const profile = ((await profileResponse.json()) as Profile[])[0];
-    if (!profile) return genericResponse();
+    if (!profile) return errorResponse(ACCOUNT_NOT_FOUND_MESSAGE, 404);
 
     const recentThreshold = encodeURIComponent(new Date(Date.now() - 60_000).toISOString());
     const recentResponse = await serviceRest(
       `password_reset_tokens_tym?user_id=eq.${profile.id}&status=eq.pendiente&created_at=gte.${recentThreshold}&select=id&limit=1`,
     );
     if (recentResponse.ok && ((await recentResponse.json()) as Array<{ id: string }>).length) {
-      return genericResponse();
+      return successResponse();
     }
 
     const token = randomToken(32);
@@ -106,51 +119,75 @@ export async function POST(request: NextRequest) {
         expires_at: expiresAt,
       },
     });
-    if (!insertResponse.ok) return genericResponse();
+    if (!insertResponse.ok) {
+      return errorResponse(
+        "No fue posible preparar la recuperación. Inténtalo nuevamente.",
+        500,
+      );
+    }
     const reset = ((await insertResponse.json()) as Array<{ id: string }>)[0];
 
-    try {
-      const delivery = await sendPasswordResetEmail({
-        email: profile.email,
-        fullName: profile.full_name,
-        token,
-        origin: request.nextUrl.origin,
-      });
-      if (!delivery.sent) {
-        await revokeReset(reset.id);
-        return genericResponse();
-      }
+    const origin = request.nextUrl.origin;
 
-      await Promise.all([
-        serviceRest(`password_reset_tokens_tym?id=eq.${reset.id}`, {
-          method: "PATCH",
-          body: { sent_at: new Date().toISOString() },
-        }),
-        serviceRest(
-          `password_reset_tokens_tym?user_id=eq.${profile.id}&status=eq.pendiente&id=neq.${reset.id}`,
-          { method: "PATCH", body: { status: "revocado" } },
-        ),
-      ]);
-    } catch (error) {
-      await revokeReset(reset.id);
-      console.error("No fue posible entregar el restablecimiento de contraseña.", {
-        userId: profile.id,
-        message: error instanceof Error ? error.message : "Error desconocido",
-      });
-    }
+    // La respuesta de éxito se entrega de inmediato. El envío SMTP continúa
+    // después para no mantener cargando la pantalla de recuperación.
+    after(async () => {
+      try {
+        const delivery = await sendPasswordResetEmail({
+          email: profile.email,
+          fullName: profile.full_name,
+          token,
+          origin,
+        });
+
+        if (!delivery.sent) {
+          await revokeReset(reset.id);
+          return;
+        }
+
+        await Promise.all([
+          serviceRest(`password_reset_tokens_tym?id=eq.${reset.id}`, {
+            method: "PATCH",
+            body: { sent_at: new Date().toISOString() },
+          }),
+          serviceRest(
+            `password_reset_tokens_tym?user_id=eq.${profile.id}&status=eq.pendiente&id=neq.${reset.id}`,
+            { method: "PATCH", body: { status: "revocado" } },
+          ),
+        ]);
+      } catch (error) {
+        await revokeReset(reset.id);
+        console.error("No fue posible entregar el restablecimiento de contraseña.", {
+          userId: profile.id,
+          message: error instanceof Error ? error.message : "Error desconocido",
+        });
+      }
+    });
   } catch (error) {
     console.error("No fue posible preparar el restablecimiento de contraseña.", {
       message: error instanceof Error ? error.message : "Error desconocido",
     });
+
+    return errorResponse(
+      "No fue posible preparar la recuperación. Inténtalo nuevamente.",
+      500,
+    );
   }
 
-  return genericResponse();
+  return successResponse();
 }
 
-function genericResponse() {
+function successResponse() {
   return NextResponse.json(
-    { ok: true, message: GENERIC_MESSAGE },
+    { ok: true, message: SUCCESS_MESSAGE },
     { headers: { "Cache-Control": "no-store" } },
+  );
+}
+
+function errorResponse(message: string, status: number) {
+  return NextResponse.json(
+    { error: message },
+    { status, headers: { "Cache-Control": "no-store" } },
   );
 }
 

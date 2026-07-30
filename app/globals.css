@@ -862,3 +862,700 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   Administración de usuarios: responsive integral v2
+   Solo reorganiza el módulo Usuarios en escritorio, laptop,
+   tablet y celular. No altera los demás tableros.
+   ========================================================= */
+.admin-heading-copy {
+  min-width: 0;
+  max-width: 880px;
+}
+
+.admin-heading-copy > p:last-child {
+  max-width: 760px;
+  line-height: 1.55;
+}
+
+.admin-heading > .primary-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.admin-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-stats > div,
+.invite-form-card,
+.user-list-card,
+.invitations-card,
+.manual-link {
+  min-width: 0;
+}
+
+.user-list-card,
+.invitations-card {
+  overflow: hidden;
+}
+
+.invite-form {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(150px, .55fr);
+}
+
+.invite-form > label,
+.invite-form fieldset,
+.permission-option,
+.permission-option > span {
+  min-width: 0;
+}
+
+.permission-option strong,
+.permission-option small {
+  overflow-wrap: anywhere;
+}
+
+/* Vista normal de cada usuario */
+.user-row {
+  min-height: 82px;
+  padding: 15px 4px;
+  display: grid;
+  grid-template-columns: 44px minmax(190px, 1fr) minmax(250px, auto) auto;
+  grid-template-areas: "avatar primary meta actions";
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 9px;
+}
+
+.user-avatar {
+  grid-area: avatar;
+}
+
+.user-primary {
+  grid-area: primary;
+  min-width: 0;
+}
+
+.user-primary strong,
+.user-primary span {
+  max-width: 100%;
+}
+
+.user-meta {
+  grid-area: meta;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-row-actions {
+  grid-area: actions;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.user-row-actions > button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Edición de usuario */
+.user-row.editing {
+  min-height: 0;
+  padding: 18px 4px;
+  display: grid;
+  grid-template-columns: 44px minmax(180px, .85fr) minmax(250px, .95fr) minmax(230px, 1.1fr);
+  grid-template-areas:
+    "avatar primary fields permissions"
+    ". . actions actions"
+    ". error error error";
+  align-items: start;
+  column-gap: 16px;
+  row-gap: 14px;
+}
+
+.user-row.editing .user-avatar {
+  align-self: center;
+}
+
+.user-name-control,
+.user-edit-control {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.user-name-control > span,
+.user-edit-control > span {
+  color: #697169;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.user-name-control input,
+.user-edit-control select {
+  min-width: 0;
+  width: 100%;
+}
+
+.user-edit-fields {
+  grid-area: fields;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .78fr);
+  gap: 10px;
+}
+
+.user-permissions {
+  grid-area: permissions;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-permissions > label {
+  min-height: 32px;
+  padding: 7px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e1dfd8;
+  border-radius: 9px;
+  background: #faf9f6;
+  white-space: normal;
+}
+
+.user-permissions .admin-access-note.compact {
+  min-width: 0;
+  margin: 0;
+}
+
+/* El aviso de administrador se alinea con los inputs y no ocupa toda la columna. */
+.user-permissions.admin-mode {
+  align-self: start;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: 15px;
+}
+
+.user-permissions.admin-mode .admin-access-note.compact {
+  width: min(100%, 280px);
+  height: 43px;
+  min-height: 43px;
+  padding: 8px 12px;
+}
+
+.user-editor-actions {
+  grid-area: actions;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-editor-actions > button {
+  white-space: nowrap;
+}
+
+.user-editor-error {
+  grid-area: error;
+  width: 100%;
+}
+
+/* Invitaciones */
+.invitation-row {
+  min-height: 72px;
+  padding: 13px 4px;
+  display: grid;
+  grid-template-columns: 36px minmax(190px, 1fr) minmax(270px, auto) auto;
+  grid-template-areas: "avatar primary meta action";
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 8px;
+}
+
+.invitation-avatar {
+  grid-area: avatar;
+}
+
+.invitation-primary {
+  grid-area: primary;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.invitation-primary strong,
+.invitation-primary span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invitation-meta {
+  grid-area: meta;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.invitation-meta .invite-date {
+  color: #818981;
+  white-space: normal;
+  text-align: right;
+}
+
+.invitation-action {
+  grid-area: action;
+  white-space: nowrap;
+}
+
+/* Laptops y pantallas medianas */
+@media (max-width: 1320px) {
+  .user-row {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "avatar primary actions"
+      "avatar meta actions";
+  }
+
+  .user-meta {
+    justify-content: flex-start;
+  }
+
+  .user-row.editing {
+    grid-template-columns: 44px minmax(0, 1fr) minmax(250px, .85fr);
+    grid-template-areas:
+      "avatar primary fields"
+      ". permissions permissions"
+      ". actions actions"
+      ". error error";
+  }
+
+  .user-permissions.admin-mode {
+    padding-top: 0;
+  }
+
+  .user-permissions.admin-mode .admin-access-note.compact {
+    width: min(100%, 320px);
+  }
+
+  .invitation-row {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "avatar primary action"
+      "avatar meta action";
+  }
+
+  .invitation-meta {
+    justify-content: flex-start;
+  }
+
+  .invitation-meta .invite-date {
+    text-align: left;
+  }
+}
+
+/* Tablets horizontales y verticales */
+@media (max-width: 900px) {
+  .admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-stats > div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .invite-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .invite-form > label:nth-of-type(3) {
+    grid-column: 1 / -1;
+  }
+
+  .permission-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .manual-link {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .manual-link > div {
+    grid-column: 1 / -1;
+  }
+
+  .manual-link code {
+    min-width: 0;
+  }
+
+  .user-row {
+    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-areas:
+      "avatar primary"
+      ". meta"
+      ". actions";
+    padding-block: 16px;
+  }
+
+  .user-row-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .user-row.editing {
+    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-areas:
+      "avatar primary"
+      ". fields"
+      ". permissions"
+      ". actions"
+      ". error";
+  }
+
+  .user-editor-actions {
+    justify-content: flex-start;
+  }
+
+  .invitation-row {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "avatar primary action"
+      ". meta action";
+  }
+}
+
+/* Celulares grandes y tablets pequeñas */
+@media (max-width: 700px) {
+  .admin-heading {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .admin-heading > .primary-button {
+    width: 100%;
+  }
+
+  .admin-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-stats > div:last-child {
+    grid-column: auto;
+  }
+
+  .invite-form-card,
+  .user-list-card,
+  .invitations-card {
+    padding: 19px 17px;
+  }
+
+  .invite-form {
+    grid-template-columns: 1fr;
+  }
+
+  .invite-form > label:nth-of-type(3) {
+    grid-column: auto;
+  }
+
+  .permission-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .invite-form > .primary-button {
+    width: 100%;
+  }
+
+  .manual-link {
+    grid-template-columns: 1fr;
+  }
+
+  .manual-link code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .manual-link .secondary-button {
+    width: 100%;
+  }
+
+  .user-edit-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .user-permissions.admin-mode .admin-access-note.compact {
+    width: 100%;
+    max-width: none;
+    min-height: 46px;
+    height: auto;
+  }
+
+  .user-row-actions,
+  .user-editor-actions {
+    width: 100%;
+  }
+
+  .user-row-actions > button,
+  .user-editor-actions > button {
+    min-height: 44px;
+  }
+
+  .invitation-row {
+    grid-template-columns: 36px minmax(0, 1fr);
+    grid-template-areas:
+      "avatar primary"
+      ". meta"
+      ". action";
+  }
+
+  .invitation-action {
+    width: 100%;
+  }
+}
+
+/* Celulares */
+@media (max-width: 480px) {
+  .admin-heading h1 {
+    font-size: clamp(30px, 10vw, 36px);
+  }
+
+  .admin-heading-copy > p:last-child {
+    font-size: 13px;
+  }
+
+  .admin-stats > div {
+    min-height: 72px;
+    padding: 14px 15px;
+  }
+
+  .invite-form-card,
+  .user-list-card,
+  .invitations-card {
+    padding: 17px 14px;
+    border-radius: 16px;
+  }
+
+  .card-heading {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .card-heading h2 {
+    font-size: 19px;
+  }
+
+  .user-row {
+    grid-template-columns: 38px minmax(0, 1fr);
+    column-gap: 11px;
+  }
+
+  .user-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 10px;
+  }
+
+  .user-primary strong,
+  .user-primary span,
+  .invitation-primary strong,
+  .invitation-primary span {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .user-meta {
+    justify-content: flex-start;
+  }
+
+  .user-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .user-row-actions > button {
+    width: 100%;
+    padding-inline: 10px;
+  }
+
+  .user-row-actions > button:only-child {
+    grid-column: 1 / -1;
+  }
+
+  .user-editor-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .user-editor-actions > button {
+    width: 100%;
+    padding-inline: 10px;
+  }
+
+  .user-editor-actions > .danger-button {
+    grid-column: 1 / -1;
+  }
+
+  .user-permissions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .user-permissions > label {
+    width: 100%;
+  }
+
+  .admin-access-note,
+  .admin-access-note.compact {
+    min-height: 50px;
+    padding: 10px 12px;
+  }
+
+  .user-permissions.admin-mode .admin-access-note.compact {
+    width: 100%;
+    min-height: 50px;
+    height: auto;
+  }
+
+  .invitation-row {
+    grid-template-columns: 34px minmax(0, 1fr);
+    column-gap: 10px;
+  }
+
+  .invitation-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .invitation-meta .invite-date {
+    overflow-wrap: anywhere;
+  }
+}
+
+
+/* Confirmación de eliminación de usuarios */
+.delete-user-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 320;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(25, 34, 26, 0.55);
+  backdrop-filter: blur(5px);
+  animation: profileFadeIn 0.18s ease-out;
+}
+
+.delete-user-dialog {
+  width: min(430px, 100%);
+  padding: 30px;
+  border: 1px solid #dedbd1;
+  border-radius: 24px;
+  color: var(--ink);
+  text-align: center;
+  background: #f8f7f3;
+  box-shadow: 0 28px 80px rgba(21, 29, 22, 0.28);
+  animation: profileScaleIn 0.2s ease-out;
+}
+
+.delete-user-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e8cbd1;
+  border-radius: 16px;
+  color: #953c4c;
+  background: #fbebee;
+}
+
+.delete-user-dialog .eyebrow {
+  margin: 0 0 7px;
+}
+
+.delete-user-dialog h2 {
+  margin: 0;
+  font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif;
+  font-size: clamp(22px, 4vw, 27px);
+  line-height: 1.18;
+}
+
+.delete-user-dialog > p:last-of-type {
+  margin: 13px 0 0;
+  color: #5e665d;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.delete-user-actions {
+  margin-top: 25px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.delete-user-actions > button {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+}
+
+.form-success,
+.form-error {
+  animation: actionMessageIn 0.2s ease-out;
+}
+
+@keyframes actionMessageIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .delete-user-backdrop {
+    align-items: end;
+    padding: 14px;
+  }
+
+  .delete-user-dialog {
+    padding: 24px 18px 18px;
+    border-radius: 22px;
+  }
+
+  .delete-user-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .delete-user-actions .danger-button {
+    order: -1;
+  }
+}

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import {
   consumeRateLimits,
   RateLimitUnavailableError,
@@ -179,45 +179,86 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  try {
-    const delivery = await sendInvitationEmail({
-      email: input.data.email,
-      fullName: input.data.fullName,
-      token,
-      origin: request.nextUrl.origin,
-    });
-    if (delivery.sent) {
-      await serviceRest(`invitations_tym?id=eq.${invitation.id}`, {
-        method: "PATCH",
-        body: { sent_at: new Date().toISOString() },
+  // La creación de la invitación ya quedó confirmada en la base de datos.
+  // Registramos la acción antes de responder y dejamos el SMTP para después,
+  // de modo que la pantalla no espere la conexión con el servidor de correo.
+  await logAdminAction(auth.context.user.id, "invitation.created", "invitation", invitation.id, {
+    email: input.data.email,
+    delivery_status: "processing",
+  });
+
+  const origin = request.nextUrl.origin;
+  const actorId = auth.context.user.id;
+
+  after(async () => {
+    try {
+      const delivery = await sendInvitationEmail({
+        email: input.data.email,
+        fullName: input.data.fullName,
+        token,
+        origin,
       });
+
+      if (delivery.sent) {
+        await serviceRest(`invitations_tym?id=eq.${invitation.id}`, {
+          method: "PATCH",
+          body: { sent_at: new Date().toISOString() },
+        });
+      }
+
+      await logAdminAction(
+        actorId,
+        delivery.sent ? "invitation.email_sent" : "invitation.email_not_sent",
+        "invitation",
+        invitation.id,
+        {
+          email: input.data.email,
+          delivered: delivery.sent,
+          provider: delivery.provider,
+        },
+      );
+    } catch (error) {
+      const warning =
+        error instanceof Error ? error.message : "No fue posible enviar el correo.";
+
+      console.error("No fue posible enviar la invitación en segundo plano.", {
+        invitationId: invitation.id,
+        message: warning,
+      });
+
+      await logAdminAction(
+        actorId,
+        "invitation.email_failed",
+        "invitation",
+        invitation.id,
+        {
+          email: input.data.email,
+          delivered: false,
+          warning,
+        },
+      );
     }
-    await logAdminAction(auth.context.user.id, "invitation.created", "invitation", invitation.id, {
-      email: input.data.email,
-      delivered: delivery.sent,
-      provider: delivery.provider,
-    });
-    return NextResponse.json({
+  });
+
+  return NextResponse.json(
+    {
       ok: true,
-      delivered: delivery.sent,
+      delivered: null,
+      deliveryStatus: "processing",
       expiresAt,
-      manualInviteUrl: delivery.sent ? undefined : delivery.inviteUrl,
-    });
-  } catch (error) {
-    const warning = error instanceof Error ? error.message : "No fue posible enviar el correo.";
-    await logAdminAction(auth.context.user.id, "invitation.created", "invitation", invitation.id, {
-      email: input.data.email,
-      delivered: false,
-      warning,
-    });
-    return NextResponse.json({
-      ok: true,
-      delivered: false,
-      expiresAt,
-      warning: `La invitación fue creada, pero el correo no se entregó: ${warning}`,
-      manualInviteUrl: `${request.nextUrl.origin}/?invite=${encodeURIComponent(token)}`,
-    });
-  }
+      invitation: {
+        id: invitation.id,
+        email: input.data.email,
+        full_name: input.data.fullName,
+        role: input.data.role,
+        status: "pendiente",
+        expires_at: expiresAt,
+        sent_at: null,
+        send_count: 1,
+      },
+    },
+    { status: 201 },
+  );
 }
 
 export async function PATCH(request: NextRequest) {
@@ -432,10 +473,17 @@ export async function DELETE(request: NextRequest) {
 
 async function resendInvitation(request: NextRequest, actorId: string, invitationId: string) {
   const response = await serviceRest(
-    `invitations_tym?id=eq.${encodeURIComponent(invitationId)}&select=id,email,full_name,status&limit=1`,
+    `invitations_tym?id=eq.${encodeURIComponent(invitationId)}&select=id,email,full_name,role,status,send_count&limit=1`,
   );
   const invitation = response.ok
-    ? ((await response.json()) as Array<{ id: string; email: string; full_name: string; status: string }>)[0]
+    ? ((await response.json()) as Array<{
+        id: string;
+        email: string;
+        full_name: string;
+        role: "administrador" | "operador" | "consulta";
+        status: string;
+        send_count: number;
+      }>)[0]
     : null;
   if (!invitation || invitation.status === "aceptada" || invitation.status === "revocada") {
     return NextResponse.json({ error: "La invitación ya no puede reenviarse." }, { status: 409 });
@@ -473,41 +521,79 @@ async function resendInvitation(request: NextRequest, actorId: string, invitatio
     return NextResponse.json({ error: "No fue posible preparar el nuevo enlace." }, { status: 500 });
   }
 
-  let delivered = false;
-  let provider = "manual";
-  let warning: string | undefined;
-  try {
-    const delivery = await sendInvitationEmail({
-      email: invitation.email,
-      fullName: invitation.full_name,
-      token,
-      origin: request.nextUrl.origin,
-    });
-    delivered = delivery.sent;
-    provider = delivery.provider;
-  } catch (error) {
-    warning = error instanceof Error ? error.message : "No fue posible enviar el correo.";
-  }
-  if (delivered) {
-    await serviceRest(`invitations_tym?id=eq.${invitation.id}`, {
-      method: "PATCH",
-      body: { sent_at: new Date().toISOString() },
-    });
-  }
-  await serviceRest("rpc/increment_invitation_send_count_tym", { body: { p_invitation_id: invitation.id } });
-  await logAdminAction(actorId, "invitation.resent", "invitation", invitation.id, {
-    delivered,
-    provider,
-    warning,
+  await serviceRest("rpc/increment_invitation_send_count_tym", {
+    body: { p_invitation_id: invitation.id },
   });
+
+  await logAdminAction(actorId, "invitation.resent", "invitation", invitation.id, {
+    delivery_status: "processing",
+  });
+
+  const origin = request.nextUrl.origin;
+
+  after(async () => {
+    try {
+      const delivery = await sendInvitationEmail({
+        email: invitation.email,
+        fullName: invitation.full_name,
+        token,
+        origin,
+      });
+
+      if (delivery.sent) {
+        await serviceRest(`invitations_tym?id=eq.${invitation.id}`, {
+          method: "PATCH",
+          body: { sent_at: new Date().toISOString() },
+        });
+      }
+
+      await logAdminAction(
+        actorId,
+        delivery.sent ? "invitation.email_resent" : "invitation.email_not_sent",
+        "invitation",
+        invitation.id,
+        {
+          delivered: delivery.sent,
+          provider: delivery.provider,
+        },
+      );
+    } catch (error) {
+      const warning =
+        error instanceof Error ? error.message : "No fue posible enviar el correo.";
+
+      console.error("No fue posible reenviar la invitación en segundo plano.", {
+        invitationId: invitation.id,
+        message: warning,
+      });
+
+      await logAdminAction(
+        actorId,
+        "invitation.email_resend_failed",
+        "invitation",
+        invitation.id,
+        {
+          delivered: false,
+          warning,
+        },
+      );
+    }
+  });
+
   return NextResponse.json({
     ok: true,
-    delivered,
+    delivered: null,
+    deliveryStatus: "processing",
     expiresAt,
-    warning: warning ? `El enlace fue renovado, pero el correo no se entregó: ${warning}` : undefined,
-    manualInviteUrl: delivered
-      ? undefined
-      : `${request.nextUrl.origin}/?invite=${encodeURIComponent(token)}`,
+    invitation: {
+      id: invitation.id,
+      email: invitation.email,
+      full_name: invitation.full_name,
+      role: invitation.role,
+      status: "pendiente",
+      expires_at: expiresAt,
+      sent_at: null,
+      send_count: (invitation.send_count ?? 0) + 1,
+    },
   });
 }
 

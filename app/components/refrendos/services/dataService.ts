@@ -1,19 +1,4 @@
-// Pre-parsed Financial Data (Kept as requested)
-const monthlyRevenueDataRaw = [
-  { monthName: 'Ene', year2022: 78920034, year2023: 98107369, year2024: 155154008, year2025: 147469205, year2026Projected: 156985791, year2026FechaPago: 135495220, year2026CuentaComprobada: 135495220 },
-  { monthName: 'Feb', year2022: 72538365, year2023: 81348742, year2024: 96044583, year2025: 88658123, year2026Projected: 95814528, year2026FechaPago: 114380572, year2026CuentaComprobada: 114380572 },
-  { monthName: 'Mar', year2022: 95557944, year2023: 98298216, year2024: 108448164, year2025: 122899978, year2026Projected: 120011847, year2026FechaPago: 131497461, year2026CuentaComprobada: 131497461 },
-  { monthName: 'Abr', year2022: 54443364, year2023: 62299201, year2024: 50913256, year2025: 70383034, year2026Projected: 62922449, year2026FechaPago: 64669121, year2026CuentaComprobada: 64669121 },
-  { monthName: 'May', year2022: 27947695, year2023: 28572289, year2024: 22040018, year2025: 57483876, year2026Projected: 41253019, year2026CuentaComprobada: 63761725.75 },
-  { monthName: 'Jun', year2022: 20761817, year2023: 17890399, year2024: 21835686, year2025: 52111005, year2026Projected: 38359845, year2026CuentaComprobada: 24909651 },
-  { monthName: 'Jul', year2022: 14422130, year2023: 11050696, year2024: 19766078, year2025: 21486247, year2026Projected: 21399643, year2026CuentaComprobada: 8773312 },
-  { monthName: 'Ago', year2022: 11425032, year2023: 11903074, year2024: 17239293, year2025: 10616958, year2026Projected: 14450429 },
-  { monthName: 'Sep', year2022: 8847161, year2023: 8922391, year2024: 12605940, year2025: 6877293, year2026Projected: 15521577 },
-  { monthName: 'Oct', year2022: 7674302, year2023: 8712051, year2024: 3507942, year2025: 6355502, year2026Projected: 10782916 },
-  { monthName: 'Nov', year2022: 8222746, year2023: 6281138, year2024: 5732949, year2025: 6921140, year2026Projected: 11918064 },
-  { monthName: 'Dic', year2022: 10079201, year2023: 7240590, year2024: 7685057, year2025: 5825831, year2026Projected: 5730713 },
-];
-
+// La recaudación mensual se consulta desde Supabase mediante /api/refrendos/recaudacion.
 const dailyRevenueCsv = `concepto,fecha,monto
 REFRENDO DE PLACAS SERVICIO PARTICULAR,01/01/2026,811438
 REFRENDO DE PLACAS SERVICIO PARTICULAR,02/01/2026,2350076
@@ -282,17 +267,43 @@ export interface HistoricalData {
   month: number;
 }
 
-export interface MonthlyComparativeData {
+export type MonthlyComparativeData = {
   monthName: string;
-  year2022: number;
-  year2023: number;
-  year2024: number;
-  year2025: number;
-  year2026?: number;
-  year2026Projected?: number;
-  year2026FechaPago?: number;
-  year2026CuentaComprobada?: number;
-}
+  monthIndex: number;
+  [key: string]: string | number | undefined;
+};
+
+export type RevenueDataset = {
+  months: MonthlyComparativeData[];
+  years: number[];
+  activeYear: number;
+  cutoffDate: string | null;
+  cri: string | null;
+  concepto: string | null;
+};
+
+export type RecaudacionDashboardData = {
+  refrendo: RevenueDataset;
+  licencias: RevenueDataset;
+};
+
+type RecaudacionRow = {
+  anio: number | string;
+  mes: number | string;
+  cri: string | null;
+  concepto: string | null;
+  monto_proyectado: number | string | null;
+  monto_fecha_pago?: number | string | null;
+  monto_recaudado: number | string | null;
+  fecha_corte: string | null;
+  observacion?: string | null;
+  fuente?: string | null;
+};
+
+type RecaudacionApiResponse = {
+  refrendo: RecaudacionRow[];
+  licencias: RecaudacionRow[];
+};
 
 export interface HistoricalMonthlyData {
   monthName: string;
@@ -674,9 +685,116 @@ export const getHistoricalMonthlyData = (liveData: TramiteData[] = []): Historic
   });
 };
 
-export const getMonthlyComparativeData = (): MonthlyComparativeData[] => {
-  return monthlyRevenueDataRaw;
+const MONTH_SHORT_NAMES = [
+  "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+  "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
+];
+
+function emptyRevenueDataset(): RevenueDataset {
+  return {
+    months: MONTH_SHORT_NAMES.map((monthName, index) => ({
+      monthName,
+      monthIndex: index + 1,
+    })),
+    years: [],
+    activeYear: new Date().getFullYear(),
+    cutoffDate: null,
+    cri: null,
+    concepto: null,
+  };
+}
+
+export const EMPTY_RECAUDACION_DASHBOARD: RecaudacionDashboardData = {
+  refrendo: emptyRevenueDataset(),
+  licencias: emptyRevenueDataset(),
 };
+
+function optionalNumber(value: number | string | null | undefined): number | undefined {
+  if (value === null || value === undefined || value === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function buildRevenueDataset(rows: RecaudacionRow[]): RevenueDataset {
+  if (!Array.isArray(rows) || rows.length === 0) return emptyRevenueDataset();
+
+  const years = Array.from(new Set(
+    rows
+      .map((row) => Number(row.anio))
+      .filter((year) => Number.isInteger(year) && year >= 2000 && year <= 2200),
+  )).sort((left, right) => left - right);
+
+  const activeYear = years.at(-1) ?? new Date().getFullYear();
+  const actualKey = `year${activeYear}CuentaComprobada`;
+  const projectedKey = `year${activeYear}Projected`;
+  const paymentKey = `year${activeYear}FechaPago`;
+
+  const months = MONTH_SHORT_NAMES.map((monthName, index) => ({
+    monthName,
+    monthIndex: index + 1,
+  } as MonthlyComparativeData));
+
+  let cutoffDate: string | null = null;
+  let cri: string | null = null;
+  let concepto: string | null = null;
+
+  for (const row of rows) {
+    const year = Number(row.anio);
+    const month = Number(row.mes);
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) continue;
+
+    const target = months[month - 1];
+    const actual = optionalNumber(row.monto_recaudado);
+    const projected = optionalNumber(row.monto_proyectado);
+    const payment = optionalNumber(row.monto_fecha_pago);
+
+    if (year === activeYear) {
+      if (projected !== undefined) target[projectedKey] = projected;
+      if (payment !== undefined) target[paymentKey] = payment;
+      if (actual !== undefined) target[actualKey] = actual;
+    } else if (actual !== undefined) {
+      target[`year${year}`] = actual;
+    }
+
+    if (actual !== undefined && year === activeYear && row.fecha_corte) {
+      if (!cutoffDate || row.fecha_corte > cutoffDate) {
+        cutoffDate = row.fecha_corte;
+      }
+    }
+
+    cri ??= row.cri;
+    concepto ??= row.concepto;
+  }
+
+  return { months, years, activeYear, cutoffDate, cri, concepto };
+}
+
+export async function fetchRecaudacionDashboard(
+  signal?: AbortSignal,
+): Promise<RecaudacionDashboardData> {
+  const response = await fetch("/api/refrendos/recaudacion", {
+    headers: { Accept: "application/json" },
+    credentials: "same-origin",
+    cache: "no-store",
+    signal,
+  });
+
+  const payload = await response.json().catch(() => null) as
+    | RecaudacionApiResponse
+    | { error?: string }
+    | null;
+
+  if (!response.ok) {
+    const message = payload && "error" in payload ? payload.error : undefined;
+    throw new Error(message || `Error al consultar la recaudación (${response.status}).`);
+  }
+
+  const data = payload as RecaudacionApiResponse;
+  return {
+    refrendo: buildRevenueDataset(data.refrendo ?? []),
+    licencias: buildRevenueDataset(data.licencias ?? []),
+  };
+}
 
 export const getGestoresData = (): GestorData[] => [
   { month: 'Enero', year: 2026, fullLabel: 'Ene 2026', gestores: 10410, totalGeneral: 91936 },

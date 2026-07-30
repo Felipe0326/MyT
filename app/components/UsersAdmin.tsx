@@ -76,6 +76,8 @@ export function UsersAdmin({
   const [showInvite, setShowInvite] = useState(false);
   const [manualUrl, setManualUrl] = useState("");
   const [now, setNow] = useState(0);
+  const [pendingDelete, setPendingDelete] = useState<UserRecord | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState("");
 
   async function load() {
     setLoading(true);
@@ -103,6 +105,19 @@ export function UsersAdmin({
     return () => window.clearTimeout(timeout);
   }, []);
 
+
+  useEffect(() => {
+    if (!notice) return;
+    const timeout = window.setTimeout(() => setNotice(""), 5_000);
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
+
+  useEffect(() => {
+    if (!error) return;
+    const timeout = window.setTimeout(() => setError(""), 7_000);
+    return () => window.clearTimeout(timeout);
+  }, [error]);
+
   async function mutate(method: MutateMethod, body: unknown) {
     const response = await fetch("/api/admin/users", {
       method,
@@ -117,7 +132,9 @@ export function UsersAdmin({
       error?: string;
       warning?: string;
       manualInviteUrl?: string;
-      delivered?: boolean;
+      delivered?: boolean | null;
+      deliveryStatus?: "processing" | "sent" | "failed";
+      invitation?: InvitationRecord;
     };
 
     if (!response.ok) {
@@ -145,13 +162,31 @@ export function UsersAdmin({
     });
 
     setNotice(
-      payload.delivered
-        ? "Invitación enviada correctamente."
-        : payload.warning ??
-            "Invitación creada. Falta configurar el servicio de correo; puedes copiar el enlace temporal.",
+      payload.deliveryStatus === "processing"
+        ? "Invitación creada. El correo se está enviando."
+        : payload.delivered
+          ? "Invitación enviada correctamente."
+          : payload.warning ?? "Invitación creada.",
     );
+
+    if (payload.invitation) {
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              invitations: [
+                payload.invitation as InvitationRecord,
+                ...current.invitations.filter(
+                  (invitation) => invitation.id !== payload.invitation?.id,
+                ),
+              ],
+            }
+          : current,
+      );
+      setNow(Date.now());
+    }
+
     setShowInvite(false);
-    await load();
   }
 
   async function resend(invitationId: string) {
@@ -160,34 +195,67 @@ export function UsersAdmin({
     try {
       const payload = await mutate("POST", { action: "resend", invitationId });
       setNotice(
-        payload.delivered
-          ? "Invitación reenviada; el enlace anterior quedó invalidado."
-          : payload.warning ?? "Se generó un enlace nuevo de 48 horas.",
+        payload.deliveryStatus === "processing"
+          ? "Enlace renovado. El correo se está reenviando."
+          : payload.delivered
+            ? "Invitación reenviada; el enlace anterior quedó invalidado."
+            : payload.warning ?? "Se generó un enlace nuevo de 48 horas.",
       );
-      await load();
+
+      if (payload.invitation) {
+        setData((current) =>
+          current
+            ? {
+                ...current,
+                invitations: current.invitations.map((invitation) =>
+                  invitation.id === payload.invitation?.id
+                    ? (payload.invitation as InvitationRecord)
+                    : invitation,
+                ),
+              }
+            : current,
+        );
+        setNow(Date.now());
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "No fue posible reenviar la invitación.");
     }
   }
 
-  async function removeUser(user: UserRecord) {
-    const confirmed = window.confirm(
-      `¿Eliminar el acceso de ${user.full_name} a este sistema?\n\n` +
-        "Se cerrarán sus sesiones y se quitarán sus permisos de Movilidad TYM. " +
-        "Su cuenta de Supabase Auth se conservará para no afectar otros sistemas.",
-    );
+  async function requestDelete(user: UserRecord) {
+    setError("");
+    setPendingDelete(user);
+  }
 
-    if (!confirmed) return;
+  async function confirmDelete() {
+    if (!pendingDelete || deletingUserId) return;
 
+    const user = pendingDelete;
+    setDeletingUserId(user.id);
     setError("");
     setNotice("");
 
     try {
       await mutate("DELETE", { userId: user.id });
-      setNotice(`Se eliminó el acceso de ${user.full_name} a Movilidad TYM.`);
-      await load();
+
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              users: current.users.filter((item) => item.id !== user.id),
+              permissions: current.permissions.filter(
+                (permission) => permission.user_id !== user.id,
+              ),
+            }
+          : current,
+      );
+
+      setPendingDelete(null);
+      setNotice(`${user.full_name} se eliminó correctamente.`);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "No fue posible eliminar el acceso.");
+      setError(reason instanceof Error ? reason.message : "No fue posible eliminar el usuario.");
+    } finally {
+      setDeletingUserId("");
     }
   }
 
@@ -199,7 +267,7 @@ export function UsersAdmin({
   return (
     <div className="dashboard-stack">
       <header className="content-heading admin-heading">
-        <div>
+        <div className="admin-heading-copy">
           <p className="eyebrow">Administración</p>
           <h1>Usuarios y permisos</h1>
           <p>
@@ -281,10 +349,40 @@ export function UsersAdmin({
               isCurrent={user.id === currentUserId}
               onSave={async (body) => {
                 await mutate("PATCH", body);
+
+                setData((current) =>
+                  current
+                    ? {
+                        ...current,
+                        users: current.users.map((item) =>
+                          item.id === body.userId
+                            ? {
+                                ...item,
+                                full_name: body.fullName,
+                                role: body.role,
+                                status: body.status,
+                              }
+                            : item,
+                        ),
+                        permissions: [
+                          ...current.permissions.filter(
+                            (permission) => permission.user_id !== body.userId,
+                          ),
+                          ...(body.role === "administrador"
+                            ? []
+                            : body.sectionIds.map((sectionId) => ({
+                                user_id: body.userId,
+                                section_id: sectionId,
+                                can_view: true,
+                              }))),
+                        ],
+                      }
+                    : current,
+                );
+
                 setNotice("Usuario y permisos actualizados.");
-                await load();
               }}
-              onDelete={() => removeUser(user)}
+              onDelete={() => requestDelete(user)}
             />
           ))}
 
@@ -308,23 +406,30 @@ export function UsersAdmin({
 
             return (
               <div key={invitation.id} className="invitation-row">
-                <div className="avatar small">{initials(invitation.full_name)}</div>
-                <div>
+                <div className="avatar small invitation-avatar">
+                  {initials(invitation.full_name)}
+                </div>
+
+                <div className="invitation-primary">
                   <strong>{invitation.full_name}</strong>
                   <span>{invitation.email}</span>
                 </div>
-                <span className={`status-badge ${expired ? "status-expired" : "status-pending"}`}>
-                  {expired ? "Vencida" : "Pendiente"}
-                </span>
-                <span className="invite-date">
-                  Vence{" "}
-                  {new Date(invitation.expires_at).toLocaleString("es-MX", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                </span>
+
+                <div className="invitation-meta">
+                  <span className={`status-badge ${expired ? "status-expired" : "status-pending"}`}>
+                    {expired ? "Vencida" : "Pendiente"}
+                  </span>
+                  <span className="invite-date">
+                    Vence{" "}
+                    {new Date(invitation.expires_at).toLocaleString("es-MX", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </span>
+                </div>
+
                 <button
-                  className="secondary-button"
+                  className="secondary-button invitation-action"
                   onClick={() => resend(invitation.id)}
                 >
                   <RefreshCw size={14} /> Reenviar
@@ -338,6 +443,56 @@ export function UsersAdmin({
           )}
         </div>
       </section>
+
+      {pendingDelete && (
+        <div
+          className="delete-user-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !deletingUserId) {
+              setPendingDelete(null);
+            }
+          }}
+        >
+          <section
+            className="delete-user-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-user-title"
+            aria-describedby="delete-user-description"
+          >
+            <div className="delete-user-icon" aria-hidden="true">
+              <Trash2 size={22} />
+            </div>
+
+            <p className="eyebrow">Confirmación</p>
+            <h2 id="delete-user-title">Eliminar a {pendingDelete.full_name}</h2>
+            <p id="delete-user-description">
+              Se eliminará permanentemente de este sistema.
+            </p>
+
+            <div className="delete-user-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={Boolean(deletingUserId)}
+                onClick={() => setPendingDelete(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="danger-button"
+                disabled={Boolean(deletingUserId)}
+                onClick={confirmDelete}
+              >
+                <Trash2 size={15} />
+                {deletingUserId ? "Eliminando…" : "Eliminar"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
@@ -362,6 +517,12 @@ function InviteForm({
   const [sectionIds, setSectionIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!error) return;
+    const timeout = window.setTimeout(() => setError(""), 7_000);
+    return () => window.clearTimeout(timeout);
+  }, [error]);
 
   function changeRole(nextRole: AppRole) {
     setRole(nextRole);
@@ -504,6 +665,12 @@ function UserEditor({
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (!error) return;
+    const timeout = window.setTimeout(() => setError(""), 7_000);
+    return () => window.clearTimeout(timeout);
+  }, [error]);
+
   const effectiveSectionIds = role === "administrador" ? [] : sectionIds;
   const effectiveSectionKey = [...effectiveSectionIds].sort().join();
   const initialSectionKey =
@@ -585,11 +752,17 @@ function UserEditor({
 
   return (
     <article className={`user-row ${editing ? "editing" : ""}`}>
-      <div className="avatar">{initials(user.full_name)}</div>
+      <div className="avatar user-avatar">{initials(user.full_name)}</div>
 
       <div className="user-primary">
         {editing ? (
-          <input value={fullName} onChange={(event) => setFullName(event.target.value)} />
+          <label className="user-name-control">
+            <span>Nombre completo</span>
+            <input
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+            />
+          </label>
         ) : (
           <>
             <strong>
@@ -603,28 +776,38 @@ function UserEditor({
 
       {editing ? (
         <>
-          <select
-            value={role}
-            disabled={isCurrent}
-            onChange={(event) => changeRole(event.target.value as AppRole)}
-          >
-            <option value="consulta">Consulta</option>
-            <option value="editor">Editor</option>
-            <option value="administrador">Administrador</option>
-          </select>
+          <div className="user-edit-fields">
+            <label className="user-edit-control">
+              <span>Rol</span>
+              <select
+                value={role}
+                disabled={isCurrent}
+                onChange={(event) => changeRole(event.target.value as AppRole)}
+              >
+                <option value="consulta">Consulta</option>
+                <option value="editor">Editor</option>
+                <option value="administrador">Administrador</option>
+              </select>
+            </label>
 
-          <select
-            value={status}
-            disabled={isCurrent}
-            onChange={(event) =>
-              setStatus(event.target.value as "activo" | "inactivo")
-            }
-          >
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
+            <label className="user-edit-control">
+              <span>Estatus</span>
+              <select
+                value={status}
+                disabled={isCurrent}
+                onChange={(event) =>
+                  setStatus(event.target.value as "activo" | "inactivo")
+                }
+              >
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+            </label>
+          </div>
 
-          <div className="user-permissions">
+          <div
+            className={`user-permissions ${role === "administrador" ? "admin-mode" : ""}`}
+          >
             {role === "administrador" ? (
               <AdminAccessNote compact />
             ) : (
@@ -679,13 +862,15 @@ function UserEditor({
         </>
       ) : (
         <>
-          <span className={`role-badge role-${user.role}`}>{roleLabel(user.role)}</span>
-          <span className={`status-badge status-${user.status}`}>
-            {user.status === "activo" ? "Activo" : "Inactivo"}
-          </span>
-          <span className="section-count">
-            {user.role === "administrador" ? sections.length : initialSections.length} tableros
-          </span>
+          <div className="user-meta">
+            <span className={`role-badge role-${user.role}`}>{roleLabel(user.role)}</span>
+            <span className={`status-badge status-${user.status}`}>
+              {user.status === "activo" ? "Activo" : "Inactivo"}
+            </span>
+            <span className="section-count">
+              {user.role === "administrador" ? sections.length : initialSections.length} tableros
+            </span>
+          </div>
 
           <div className="user-row-actions">
             <button className="secondary-button" onClick={() => setEditing(true)}>

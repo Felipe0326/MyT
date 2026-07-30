@@ -8,7 +8,6 @@ import { SmoothFilterSelect } from '../SmoothFilterSelect';
 
 import {
   getAggregatedStats,
-  getMonthlyComparativeData,
   getGestoresData,
   getFebruaryRevenueData,
   getJanuaryRevenueData,
@@ -19,9 +18,12 @@ import {
   getJulyRevenueData,
   fetchRefrendoDashboard,
   fetchRefrendoYearAxisMax,
+  fetchRecaudacionDashboard,
   clearRefrendoDashboardCache,
   EMPTY_REFRENDO_DASHBOARD,
+  EMPTY_RECAUDACION_DASHBOARD,
   type RefrendoDashboardResponse,
+  type RecaudacionDashboardData,
   type RefrendoRecord,
   type RefrendoSortKey,
   type SortDirection,
@@ -67,6 +69,9 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fixedYAxisMax, setFixedYAxisMax] = useState(0);
+  const [recaudacion, setRecaudacion] = useState<RecaudacionDashboardData>(EMPTY_RECAUDACION_DASHBOARD);
+  const [isRevenueLoading, setIsRevenueLoading] = useState(true);
+  const [revenueError, setRevenueError] = useState<string | null>(null);
 
   const fetchData = useCallback(async (signal?: AbortSignal) => {
     setIsSyncing(true);
@@ -125,6 +130,30 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
     return () => controller.abort();
   }, [fixedYAxisMax, isActive]);
 
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    const controller = new AbortController();
+    setIsRevenueLoading(true);
+
+    void fetchRecaudacionDashboard(controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        setRecaudacion(result);
+        setRevenueError(null);
+      })
+      .catch((revenueRequestError) => {
+        if ((revenueRequestError as Error).name === 'AbortError') return;
+        setRevenueError((revenueRequestError as Error).message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsRevenueLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [isActive]);
+
   const handleManualUpdate = async () => {
     if (isUpdating) return;
     const controller = new AbortController();
@@ -164,7 +193,6 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
     };
   }), [dashboard.dailyTrend]);
 
-  const monthlyRevenueData = useMemo(() => getMonthlyComparativeData(), []);
   const gestoresData = useMemo(() => getGestoresData(), []);
 
   const allMonthlyRevenue = useMemo(() => ({
@@ -517,11 +545,13 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
               />
 
               {/* Revenue Comparison */}
-              <RevenueChart 
-                monthlyRevenueData={monthlyRevenueData}
+              <RevenueChart
+                refrendoData={recaudacion.refrendo}
+                licenciasData={recaudacion.licencias}
                 formatCurrency={formatCurrency}
-                currentMonth={currentMonth}
                 onMonthSelect={selectMonthFromChart}
+                loading={isRevenueLoading}
+                error={revenueError}
               />
 
               {/* Inconspicuous Call to Action */}
@@ -580,7 +610,7 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
                 className="pt-8 border-t border-slate-100"
               >
                 <p className="text-[10px] sm:text-xs text-slate-400 italic text-center max-w-4xl mx-auto leading-relaxed">
-                  La información de recaudación para los meses de febrero y marzo se tomó de la API de polizas brindada por administración y finanzas, la de enero está consultandose para alinear nuestra data con lo reportado por finanzas.
+                  La comparativa mensual de Refrendo y Licencias se consulta desde Supabase. Por el momento, los importes se actualizan manualmente; posteriormente se integrarán con la API financiera para su actualización diaria.
                 </p>
               </motion.div>
             </div>

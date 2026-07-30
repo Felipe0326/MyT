@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft, CheckCircle2, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 
 export function LoginScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> }) {
@@ -12,6 +12,18 @@ export function LoginScreen({ onAuthenticated }: { onAuthenticated: () => Promis
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (!notice) return;
+    const timeout = window.setTimeout(() => setNotice(""), 7_000);
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
+
+  useEffect(() => {
+    if (!error) return;
+    const timeout = window.setTimeout(() => setError(""), 6_000);
+    return () => window.clearTimeout(timeout);
+  }, [error]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -31,7 +43,7 @@ export function LoginScreen({ onAuthenticated }: { onAuthenticated: () => Promis
         }
         setNotice(
           payload.message ??
-            "Si existe una cuenta activa con ese correo, recibirás instrucciones para restablecer la contraseña.",
+            "Recibirás instrucciones para restablecer la contraseña a través de tu correo.",
         );
         return;
       }
@@ -99,7 +111,11 @@ export function LoginScreen({ onAuthenticated }: { onAuthenticated: () => Promis
                 type="email"
                 autoComplete="username"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  if (error) setError("");
+                  if (notice) setNotice("");
+                }}
                 placeholder="nombre@morelos.gob.mx"
                 required
               />
@@ -147,13 +163,16 @@ export function LoginScreen({ onAuthenticated }: { onAuthenticated: () => Promis
             </div>
           )}
           {error && <div className="form-error" role="alert">{error}</div>}
-          <button className="primary-button login-submit" disabled={loading || Boolean(notice)}>
+          <button
+            className="primary-button login-submit"
+            disabled={loading || (mode === "forgot" && Boolean(notice))}
+          >
             {loading
               ? "Procesando…"
               : mode === "login"
                 ? "Iniciar sesión"
                 : notice
-                  ? "Solicitud preparada"
+                  ? "Solicitud enviada"
                   : "Enviar enlace de recuperación"}
           </button>
         </form>

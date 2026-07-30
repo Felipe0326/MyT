@@ -85,13 +85,13 @@ export async function sendInvitationEmail(input: {
   const delivery = await deliverEmail(
     {
       to: input.email,
-      subject: "Invitación a Movilidad y Transporte",
+      subject: "Activa tu cuenta",
       category: "invitation",
       html: emailLayout({
-        eyebrow: "Gobierno de Morelos · Movilidad y Transporte",
+        eyebrow: "Agencia de Transformación Digital",
         title: "Activa tu cuenta",
         greeting: `Hola ${escapeHtml(input.fullName)},`,
-        body: "Recibiste acceso a la plataforma de Movilidad y Transporte.",
+        body: "Recibiste acceso al Sistema de Consulta de Información de Trámites, Refrendos y Experiencia Ciudadana NPS.",
         actionUrl: inviteUrl,
         actionLabel: "Crear contraseña",
         expiration: "Este enlace es personal, funciona una sola vez y vence en 48 horas.",
@@ -113,13 +113,13 @@ export async function sendPasswordResetEmail(input: {
   const delivery = await deliverEmail(
     {
       to: input.email,
-      subject: "Restablece tu contraseña de Movilidad y Transporte",
+      subject: "Restablece tu contraseña",
       category: "password_reset",
       html: emailLayout({
-        eyebrow: "Gobierno de Morelos · Movilidad y Transporte",
+        eyebrow: "Agencia de Transformación Digital",
         title: "Restablece tu contraseña",
         greeting: `Hola ${escapeHtml(input.fullName)},`,
-        body: "Se solicitó un cambio de contraseña para tu cuenta.",
+        body: "Recibiste una solicitud para restablecer tu contraseña del Sistema de Consulta de Información de Trámites, Refrendos y Experiencia Ciudadana NPS.",
         actionUrl: resetUrl,
         actionLabel: "Cambiar contraseña",
         expiration:

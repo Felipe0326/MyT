@@ -11,6 +11,7 @@ import {
   verifyMutationOrigin,
 } from "../../../../lib/request-security";
 import {
+  deleteUserSchema,
   hashToken,
   invitationSchema,
   randomToken,
@@ -119,6 +120,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: input.error.issues[0]?.message ?? "Datos inválidos." }, { status: 400 });
   }
 
+  // Los administradores reciben acceso total por rol. No se guardan permisos
+  // individuales para evitar configuraciones contradictorias o incompletas.
+  const assignedSectionIds =
+    input.data.role === "administrador" ? [] : input.data.sectionIds;
+
   try {
     const recipientLimit = await consumeRateLimits([
       {
@@ -163,10 +169,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ya existe una invitación pendiente o una cuenta con ese correo." }, { status: 409 });
   }
   const invitation = ((await insertResponse.json()) as Array<{ id: string }>)[0];
-  if (input.data.sectionIds.length) {
+  if (assignedSectionIds.length) {
     await serviceRest("invitation_section_permissions_tym", {
       method: "POST",
-      body: input.data.sectionIds.map((sectionId) => ({ invitation_id: invitation.id, section_id: sectionId })),
+      body: assignedSectionIds.map((sectionId) => ({
+        invitation_id: invitation.id,
+        section_id: sectionId,
+      })),
     });
   }
 
@@ -246,6 +255,10 @@ export async function PATCH(request: NextRequest) {
   }
   const input = updateUserSchema.safeParse(raw);
   if (!input.success) return NextResponse.json({ error: "Datos de usuario inválidos." }, { status: 400 });
+
+  const assignedSectionIds =
+    input.data.role === "administrador" ? [] : input.data.sectionIds;
+
   if (input.data.userId === auth.context.user.id && (input.data.status !== "activo" || input.data.role !== "administrador")) {
     return NextResponse.json({ error: "No puedes quitarte tu propio acceso administrativo." }, { status: 409 });
   }
@@ -257,10 +270,10 @@ export async function PATCH(request: NextRequest) {
   if (!profileResponse.ok) return NextResponse.json({ error: "No fue posible actualizar el usuario." }, { status: 500 });
 
   await serviceRest(`user_section_permissions_tym?user_id=eq.${input.data.userId}`, { method: "DELETE" });
-  if (input.data.sectionIds.length) {
+  if (assignedSectionIds.length) {
     await serviceRest("user_section_permissions_tym", {
       method: "POST",
-      body: input.data.sectionIds.map((sectionId) => ({
+      body: assignedSectionIds.map((sectionId) => ({
         user_id: input.data.userId,
         section_id: sectionId,
         can_view: true,
@@ -278,9 +291,143 @@ export async function PATCH(request: NextRequest) {
   await logAdminAction(auth.context.user.id, "user.updated", "user", input.data.userId, {
     role: input.data.role,
     status: input.data.status,
-    sections: input.data.sectionIds,
+    sections: input.data.role === "administrador" ? "all" : assignedSectionIds,
   });
   return NextResponse.json({ ok: true });
+}
+
+
+export async function DELETE(request: NextRequest) {
+  if (!verifyMutationOrigin(request)) {
+    return NextResponse.json({ error: "Origen de solicitud no autorizado." }, { status: 403 });
+  }
+
+  if (!verifyCsrf(request)) {
+    return NextResponse.json({ error: "Solicitud no autorizada." }, { status: 403 });
+  }
+
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return authError(auth);
+
+  try {
+    const actorLimit = await consumeRateLimits([
+      {
+        scope: "admin:user-delete:actor",
+        identifier: auth.context.user.id,
+        limit: 30,
+        windowSeconds: 60 * 60,
+        blockSeconds: 60 * 60,
+      },
+    ]);
+
+    if (!actorLimit.allowed) return rateLimitResponse(actorLimit);
+  } catch (error) {
+    if (error instanceof RateLimitUnavailableError) return rateLimitUnavailableResponse();
+    return rateLimitUnavailableResponse();
+  }
+
+  let raw: unknown;
+  try {
+    raw = await readLimitedJson(request, 4 * 1024);
+  } catch (error) {
+    if (error instanceof RequestSecurityError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ error: "No fue posible leer la solicitud." }, { status: 400 });
+  }
+
+  const input = deleteUserSchema.safeParse(raw);
+  if (!input.success) {
+    return NextResponse.json({ error: "El usuario indicado no es válido." }, { status: 400 });
+  }
+
+  if (input.data.userId === auth.context.user.id) {
+    return NextResponse.json(
+      { error: "No puedes eliminar tu propio acceso administrativo." },
+      { status: 409 },
+    );
+  }
+
+  const targetResponse = await serviceRest(
+    `profiles_tym?id=eq.${encodeURIComponent(input.data.userId)}` +
+      "&select=id,email,full_name,role,status&limit=1",
+  );
+
+  if (!targetResponse.ok) {
+    return NextResponse.json({ error: "No fue posible consultar el usuario." }, { status: 503 });
+  }
+
+  const target = (
+    (await targetResponse.json()) as Array<{
+      id: string;
+      email: string;
+      full_name: string;
+      role: "administrador" | "editor" | "consulta";
+      status: "activo" | "inactivo";
+    }>
+  )[0];
+
+  if (!target) {
+    return NextResponse.json({ error: "El usuario ya no existe en Movilidad TYM." }, { status: 404 });
+  }
+
+  if (target.role === "administrador" && target.status === "activo") {
+    const administratorsResponse = await serviceRest(
+      "profiles_tym?role=eq.administrador&status=eq.activo&select=id",
+    );
+
+    if (!administratorsResponse.ok) {
+      return NextResponse.json(
+        { error: "No fue posible verificar los administradores activos." },
+        { status: 503 },
+      );
+    }
+
+    const administrators = (await administratorsResponse.json()) as Array<{ id: string }>;
+    if (administrators.length <= 1) {
+      return NextResponse.json(
+        { error: "No puedes eliminar al último administrador activo del sistema." },
+        { status: 409 },
+      );
+    }
+  }
+
+  // Se elimina únicamente profiles_tym. Las relaciones ON DELETE CASCADE
+  // quitan sesiones y permisos de este sistema, pero auth.users se conserva
+  // para no afectar otras aplicaciones que comparten Supabase Auth.
+  const deleteResponse = await serviceRest(
+    `profiles_tym?id=eq.${encodeURIComponent(input.data.userId)}`,
+    {
+      method: "DELETE",
+      headers: { Prefer: "return=minimal" },
+    },
+  );
+
+  if (!deleteResponse.ok) {
+    return NextResponse.json(
+      { error: "No fue posible eliminar el acceso del usuario." },
+      { status: 500 },
+    );
+  }
+
+  await logAdminAction(
+    auth.context.user.id,
+    "user.access_removed",
+    "user",
+    input.data.userId,
+    {
+      email: target.email,
+      full_name: target.full_name,
+      role: target.role,
+      auth_user_preserved: true,
+    },
+  );
+
+  return NextResponse.json({
+    ok: true,
+    message: "El acceso a Movilidad TYM fue eliminado.",
+    authUserPreserved: true,
+  });
 }
 
 async function resendInvitation(request: NextRequest, actorId: string, invitationId: string) {

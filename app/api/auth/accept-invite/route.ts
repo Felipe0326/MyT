@@ -130,7 +130,8 @@ export async function POST(request: NextRequest) {
       throw new Error("No fue posible registrar el perfil del usuario en Movilidad TYM.");
     }
 
-    // La invitación define el conjunto exacto de secciones habilitadas.
+    // Para administradores no se guardan permisos individuales: el rol concede
+    // acceso total. En los demás roles, la invitación define las secciones.
     const clearPermissionsResponse = await serviceRest(
       `user_section_permissions_tym?user_id=eq.${user.id}`,
       { method: "DELETE" },
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
       throw new Error("No fue posible preparar los permisos del usuario.");
     }
 
-    if (permissions.length) {
+    if (invitation.role !== "administrador" && permissions.length) {
       const grantResponse = await serviceRest(
         "user_section_permissions_tym?on_conflict=user_id,section_id",
         {

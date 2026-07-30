@@ -47,6 +47,10 @@ export const updateUserSchema = z.object({
   sectionIds: z.array(z.string().uuid()).max(100).refine((values) => new Set(values).size === values.length),
 });
 
+export const deleteUserSchema = z.object({
+  userId: z.string().uuid(),
+});
+
 export const acceptInvitationSchema = z.object({
   token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   password: strongPasswordSchema,

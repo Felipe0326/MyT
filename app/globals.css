@@ -166,11 +166,13 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .font-karol { font-family: "Karol Sans", "Twogether Sans", "Segoe UI", sans-serif !important; }
 
 .eyebrow { margin: 0 0 8px; color: var(--olive); font-size: 11px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
-.primary-button, .secondary-button, .text-button { border: 0; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 750; transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
+.primary-button, .secondary-button, .danger-button, .text-button { border: 0; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 750; transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
 .primary-button { min-height: 44px; padding: 0 18px; color: #fff; background: var(--olive); box-shadow: 0 8px 18px rgba(82, 102, 71, .2); }
 .primary-button:hover:not(:disabled) { background: var(--olive-dark); transform: translateY(-1px); }
 .secondary-button { min-height: 38px; padding: 0 13px; color: #445044; background: #f2f2ee; border: 1px solid #e4e5df; }
 .secondary-button:hover:not(:disabled) { background: #e8ece5; }
+.danger-button { min-height: 38px; padding: 0 13px; color: #8b3341; background: #fff7f8; border: 1px solid #ead3d8; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 750; transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+.danger-button:hover:not(:disabled) { color: #762b37; background: #f8e9ec; border-color: #ddb8c0; transform: translateY(-1px); }
 .text-button { color: var(--olive); background: transparent; padding: 8px; }
 .small-button { min-height: 36px; padding: 0 12px; font-size: 12px; }
 
@@ -405,10 +407,17 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .permission-option > span { display: grid; gap: 3px; }
 .permission-option strong { font-size: 10px; }
 .permission-option small { color: #8a918a; font-size: 8px; }
+.admin-access-note { margin-top: 9px; min-height: 66px; padding: 13px 15px; display: flex; align-items: center; gap: 12px; border: 1px solid #cad8c4; border-radius: 12px; color: #40543a; background: #f1f6ee; }
+.admin-access-note > svg { flex: 0 0 auto; }
+.admin-access-note > span { display: grid; gap: 4px; }
+.admin-access-note strong { font-size: 11px; }
+.admin-access-note small { color: #657260; font-size: 9px; line-height: 1.4; }
+.admin-access-note.compact { width: 100%; min-height: 48px; margin-top: 0; padding: 9px 11px; }
 .invite-form > .primary-button, .invite-form > .form-error { grid-column: 1 / -1; }
 .invite-form > .primary-button { width: fit-content; }
 .user-list { margin-top: 18px; display: grid; }
 .user-row { min-height: 72px; padding: 12px 4px; display: grid; grid-template-columns: 45px minmax(170px,1fr) auto auto 85px auto; align-items: center; gap: 12px; border-top: 1px solid #ebe8e0; }
+.user-row-actions, .user-editor-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
 .user-row:first-child { border-top: 0; }
 .user-primary { min-width: 0; display: grid; gap: 4px; }
 .user-primary strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
@@ -422,10 +431,11 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .status-inactivo, .status-expired { color: #7d3641; background: #f4e6e8; }
 .status-pending { color: #775c2f; background: #f4ecdc; }
 .section-count { color: #878e87; font-size: 9px; white-space: nowrap; }
-.user-row.editing { grid-template-columns: 45px minmax(150px,.7fr) 130px 105px minmax(240px,1fr) auto auto; padding: 16px 4px; }
+.user-row.editing { grid-template-columns: 45px minmax(150px,.7fr) 130px 105px minmax(240px,1fr) minmax(155px,auto); padding: 16px 4px; }
 .user-permissions { display: flex; flex-wrap: wrap; gap: 7px; }
 .user-permissions label { color: #697169; font-size: 9px; white-space: nowrap; }
 .user-permissions input { width: auto; height: auto; accent-color: var(--olive); }
+.user-editor-error { grid-column: 2 / -1; width: 100%; }
 .invitation-list { margin-top: 15px; display: grid; }
 .invitation-row { min-height: 65px; padding: 11px 4px; display: grid; grid-template-columns: 36px minmax(180px,1fr) auto minmax(180px,.6fr) auto; align-items: center; gap: 11px; border-top: 1px solid #ebe8e0; }
 .invitation-row:first-child { border-top: 0; }
@@ -451,8 +461,9 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   .chart-grid { grid-template-columns: 1fr; }
   .user-row:not(.editing) { grid-template-columns: 45px minmax(150px,1fr) auto auto; }
   .user-row:not(.editing) .section-count { display: none; }
+  .user-row:not(.editing) .user-row-actions { grid-column: 2 / -1; }
   .user-row.editing { grid-template-columns: 45px 1fr 130px 105px; }
-  .user-row.editing .user-permissions, .user-row.editing .primary-button, .user-row.editing .text-button { grid-column: 2 / -1; }
+  .user-row.editing .user-permissions, .user-row.editing .user-editor-actions, .user-row.editing .user-editor-error { grid-column: 2 / -1; }
 }
 
 @media (max-width: 900px) {
@@ -503,9 +514,12 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   .user-row:not(.editing) { grid-template-columns: 40px 1fr auto; }
   .user-row:not(.editing) .role-badge { grid-column: 2; }
   .user-row:not(.editing) .status-badge { grid-column: 3; grid-row: 1; }
-  .user-row:not(.editing) .secondary-button { grid-column: 2 / -1; }
+  .user-row:not(.editing) .user-row-actions { grid-column: 2 / -1; justify-content: stretch; }
+  .user-row:not(.editing) .user-row-actions > button { flex: 1 1 150px; }
   .user-row.editing { grid-template-columns: 40px 1fr; }
-  .user-row.editing > select, .user-row.editing .user-permissions, .user-row.editing .primary-button, .user-row.editing .text-button { grid-column: 2; }
+  .user-row.editing > select, .user-row.editing .user-permissions, .user-row.editing .user-editor-actions, .user-row.editing .user-editor-error { grid-column: 2; }
+  .user-editor-actions { justify-content: stretch; }
+  .user-editor-actions > button { flex: 1 1 130px; }
   .manual-link { grid-template-columns: 1fr; }
   .manual-link code { white-space: normal; word-break: break-all; }
 }
@@ -820,7 +834,8 @@ select {
 
   .pagination button,
   .primary-button,
-  .secondary-button {
+  .secondary-button,
+  .danger-button {
     min-height: 44px;
   }
 }

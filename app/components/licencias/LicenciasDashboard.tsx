@@ -36,9 +36,14 @@ const MONTH_CONFIG = {
   jun: { id: 6, name: "Junio", short: "Jun" },
   jul: { id: 7, name: "Julio", short: "Jul" },
   aug: { id: 8, name: "Agosto", short: "Ago" },
+  sep: { id: 9, name: "Septiembre", short: "Sep" },
+  oct: { id: 10, name: "Octubre", short: "Oct" },
+  nov: { id: 11, name: "Noviembre", short: "Nov" },
+  dec: { id: 12, name: "Diciembre", short: "Dic" },
 } as const;
 
 type MonthKey = keyof typeof MONTH_CONFIG;
+type LicenseYear = 2025 | 2026;
 type Modalidad = "" | "en_linea" | "presencial";
 type LicenciasSortKey = "date" | "tipo_tramite" | "tipo_licencia" | "presencial" | "en_linea" | "total";
 type SortDirection = "asc" | "desc";
@@ -96,6 +101,7 @@ const UPDATE_WEBHOOK =
   || "https://lowcode.morelos.gob.mx/webhook/actualizar-licencias";
 
 export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) {
+  const [selectedYear, setSelectedYear] = useState<LicenseYear>(2026);
   const [currentMonth, setCurrentMonth] = useState<MonthKey>("aug");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [modalidad, setModalidad] = useState<Modalidad>("");
@@ -117,7 +123,7 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
-        year: "2026",
+        year: String(selectedYear),
         month: String(MONTH_CONFIG[currentMonth].id),
         page: String(page),
         sort: sortKey,
@@ -143,7 +149,7 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
     } finally {
       if (!signal?.aborted) setIsLoading(false);
     }
-  }, [currentMonth, dateRange.end, dateRange.start, modalidad, page, sortDirection, sortKey, tipoLicenciaId, tipoTramiteId]);
+  }, [currentMonth, dateRange.end, dateRange.start, modalidad, page, selectedYear, sortDirection, sortKey, tipoLicenciaId, tipoTramiteId]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -215,6 +221,22 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
     return Math.max(0, ...totalsByDay.values());
   }, [chartData]);
 
+  const visibleMonths = useMemo(
+    () => (Object.keys(MONTH_CONFIG) as MonthKey[]).filter(
+      (month) => selectedYear === 2025 || MONTH_CONFIG[month].id <= 8,
+    ),
+    [selectedYear],
+  );
+
+  function changeYear(year: LicenseYear) {
+    setSelectedYear(year);
+    if (year === 2026 && MONTH_CONFIG[currentMonth].id > 8) {
+      setCurrentMonth("aug");
+    }
+    setDateRange({ start: "", end: "" });
+    setPage(1);
+  }
+
   function changeMonth(month: MonthKey) {
     setCurrentMonth(month);
     setDateRange({ start: "", end: "" });
@@ -248,7 +270,7 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
     const normalized = monthName.trim().slice(0, 3).toLocaleLowerCase("es-MX");
     const month = (Object.entries(MONTH_CONFIG) as Array<[MonthKey, (typeof MONTH_CONFIG)[MonthKey]]>)
       .find(([, value]) => value.short.toLocaleLowerCase("es-MX") === normalized)?.[0];
-    if (month) changeMonth(month);
+    if (month && visibleMonths.includes(month)) changeMonth(month);
   }
 
   function toggleSort(key: LicenciasSortKey) {
@@ -286,7 +308,7 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
         row.total_tramites,
         row.actualizado_en,
       ]);
-      downloadCsv(`licencias_${MONTH_CONFIG[currentMonth].name.toLowerCase()}_2026.csv`, headers, rows);
+      downloadCsv(`licencias_${MONTH_CONFIG[currentMonth].name.toLowerCase()}_${selectedYear}.csv`, headers, rows);
     } finally {
       setIsExporting(false);
     }
@@ -309,15 +331,33 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
                 </div>
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#7B543E]">Movilidad y Transporte</p>
-                  <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Licencias 2026</h1>
+                  <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Licencias {selectedYear}</h1>
                   <p className="mt-1 text-sm text-[#747169]">Actividad diaria · {MONTH_CONFIG[currentMonth].name}</p>
                 </div>
               </div>
 
               <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
+                <div className="inline-flex w-fit shrink-0 items-center rounded-2xl border border-[#d8d3c7] bg-white p-1.5 shadow-sm" aria-label="Seleccionar año">
+                  {([2025, 2026] as const).map((year) => (
+                    <button
+                      key={year}
+                      type="button"
+                      onClick={() => changeYear(year)}
+                      aria-pressed={selectedYear === year}
+                      className={`min-h-9 rounded-xl px-3 text-xs font-black transition ${
+                        selectedYear === year
+                          ? "bg-[#74785C] text-white shadow-sm"
+                          : "text-[#526647] hover:bg-[#F5F4F0]"
+                      }`}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="scrollbar-hide min-w-0 overflow-x-auto pb-1 sm:pb-0">
                   <div className="inline-flex min-w-max items-center rounded-2xl border border-[#d8d3c7] bg-[#e9e6dd] p-1.5">
-                    {(Object.keys(MONTH_CONFIG) as MonthKey[]).map((month) => (
+                    {visibleMonths.map((month) => (
                       <ToggleBtn
                         key={month}
                         active={currentMonth === month}
@@ -357,8 +397,8 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(155px,0.8fr)_minmax(155px,0.8fr)_minmax(190px,1fr)_minmax(190px,1fr)_minmax(190px,1fr)_auto] xl:items-end">
-              <DateField label="Fecha inicial" value={dateRange.start} onChange={(value) => { setDateRange((current) => ({ ...current, start: value })); setPage(1); }} />
-              <DateField label="Fecha final" value={dateRange.end} onChange={(value) => { setDateRange((current) => ({ ...current, end: value })); setPage(1); }} />
+              <DateField label="Fecha inicial" year={selectedYear} value={dateRange.start} onChange={(value) => { setDateRange((current) => ({ ...current, start: value })); setPage(1); }} />
+              <DateField label="Fecha final" year={selectedYear} value={dateRange.end} onChange={(value) => { setDateRange((current) => ({ ...current, end: value })); setPage(1); }} />
               <SelectField label="Tipo de trámite" value={tipoTramiteId} onChange={changeTipoTramite} options={dashboard.filters.tiposTramite} placeholder="Todos los trámites" />
               <SelectField label="Tipo de licencia" value={tipoLicenciaId} onChange={changeTipoLicencia} options={dashboard.filters.tiposLicencia} placeholder="Todas las licencias" />
               <ModeFilter value={modalidad} onChange={changeModalidad} />
@@ -414,13 +454,13 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
   );
 }
 
-function DateField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function DateField({ label, year, value, onChange }: { label: string; year: LicenseYear; value: string; onChange: (value: string) => void }) {
   return (
     <label className="space-y-2">
       <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#74785C]">
         <CalendarDays className="h-3.5 w-3.5" /> {label}
       </span>
-      <input type="date" min="2026-01-01" value={value} onChange={(event) => onChange(event.target.value)} className="h-12 w-full rounded-xl border border-[#dedccf] bg-[#faf9f5] px-4 text-sm text-[#2E332A] outline-none focus:border-[#74785C] focus:ring-4 focus:ring-[#74785C]/10" />
+      <input type="date" min={`${year}-01-01`} max={`${year}-12-31`} value={value} onChange={(event) => onChange(event.target.value)} className="h-12 w-full rounded-xl border border-[#dedccf] bg-[#faf9f5] px-4 text-sm text-[#2E332A] outline-none focus:border-[#74785C] focus:ring-4 focus:ring-[#74785C]/10" />
     </label>
   );
 }

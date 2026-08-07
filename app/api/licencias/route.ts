@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, clearSessionCookies } from "../../../lib/session";
 import { readJsonOrText, userRest } from "../../../lib/supabase";
 
-const MIN_DATE = "2026-01-01";
+const MIN_YEAR = 2025;
+const MAX_YEAR = 2026;
 const VALID_SORTS = new Set([
   "date",
   "tipo_tramite",
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
   }
 
   const params = request.nextUrl.searchParams;
-  const year = integer(params.get("year"), 2026, 2026, 2100);
+  const year = integer(params.get("year"), 2026, MIN_YEAR, MAX_YEAR);
   const month = integer(params.get("month"), 8, 1, 12);
   const defaultFrom = `${year}-${String(month).padStart(2, "0")}-01`;
   const defaultTo = `${year}-${String(month).padStart(2, "0")}-${monthEnd(year, month)}`;
@@ -68,9 +69,12 @@ export async function GET(request: NextRequest) {
   const sort = VALID_SORTS.has(params.get("sort") ?? "") ? params.get("sort")! : "date";
   const direction = params.get("direction") === "asc" ? "asc" : "desc";
 
-  if (dateFrom < MIN_DATE || dateTo < MIN_DATE) {
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year}-12-31`;
+
+  if (dateFrom < yearStart || dateFrom > yearEnd || dateTo < yearStart || dateTo > yearEnd) {
     return NextResponse.json(
-      { error: "El tablero de Licencias solamente consulta registros de 2026 en adelante." },
+      { error: `Las fechas deben pertenecer al año ${year}.` },
       { status: 400, headers: { "Cache-Control": "no-store" } },
     );
   }

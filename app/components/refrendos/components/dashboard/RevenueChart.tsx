@@ -15,6 +15,7 @@ interface RevenueChartProps {
   onMonthSelect?: (monthName: string) => void;
   loading?: boolean;
   error?: string | null;
+  onlyLicencias?: boolean;
 }
 
 type RevenueKpis = {
@@ -174,9 +175,12 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
   onMonthSelect,
   loading = false,
   error = null,
+  onlyLicencias = false,
 }) => {
   const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
-  const [activeChartTab, setActiveChartTab] = useState<'refrendo' | 'licencias'>('refrendo');
+  const [activeChartTab, setActiveChartTab] = useState<'refrendo' | 'licencias'>(
+    onlyLicencias ? 'licencias' : 'refrendo',
+  );
 
   const selectedDataset = activeChartTab === 'refrendo' ? refrendoData : licenciasData;
   const refrendoKpis = useMemo(() => calculateRevenueKpis(refrendoData), [refrendoData]);
@@ -274,10 +278,10 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
 
   return (
     <ChartContainer
-      title="Comparativa de Recaudación"
+      title={onlyLicencias ? "Recaudación de Licencias" : "Comparativa de Recaudación"}
       description={description}
       icon={<DollarSign className="h-5 w-5 text-brand-dark" />}
-      controls={controls}
+      controls={onlyLicencias ? undefined : controls}
     >
       {loading ? (
         <div className="flex min-h-[260px] items-center justify-center text-sm font-medium text-slate-500">

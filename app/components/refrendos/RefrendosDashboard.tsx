@@ -16,6 +16,7 @@ import {
   getMayRevenueData,
   getJuneRevenueData,
   getJulyRevenueData,
+  getAugustRevenueData,
   fetchRefrendoDashboard,
   fetchRefrendoYearAxisMax,
   fetchRecaudacionDashboard,
@@ -48,12 +49,13 @@ const MONTH_CONFIG = {
   may: { id: 5, name: 'Mayo', short: 'May' },
   jun: { id: 6, name: 'Junio', short: 'Jun' },
   jul: { id: 7, name: 'Julio', short: 'Jul' },
+  aug: { id: 8, name: 'Agosto', short: 'Ago' },
 } as const;
 
 type MonthKey = keyof typeof MONTH_CONFIG;
 
 export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) => {
-  const [currentMonth, setCurrentMonth] = useState<MonthKey>('jul');
+  const [currentMonth, setCurrentMonth] = useState<MonthKey>('aug');
   const [showExtraCharts, setShowExtraCharts] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'analysis'>('dashboard');
 
@@ -203,11 +205,12 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
     may: getMayRevenueData(),
     jun: getJuneRevenueData(),
     jul: getJulyRevenueData(),
+    aug: getAugustRevenueData(),
   }), []);
 
   const revenueData = useMemo(() => allMonthlyRevenue[currentMonth], [currentMonth, allMonthlyRevenue]);
   const accumulatedRevenue = useMemo(() => {
-    const months: MonthKey[] = ['jan', 'feb', 'mar', 'abr', 'may', 'jun', 'jul'];
+    const months: MonthKey[] = ['jan', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'aug'];
     const currentIndex = months.indexOf(currentMonth);
     return months.slice(0, currentIndex + 1).reduce((total, month) => (
       total + allMonthlyRevenue[month].reduce((sum, item) => sum + item.publico + item.privado, 0)

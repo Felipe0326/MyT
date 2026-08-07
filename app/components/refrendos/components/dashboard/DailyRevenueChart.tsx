@@ -9,7 +9,7 @@ import { DailyRevenueData } from '../../services/dataService';
 
 interface DailyRevenueChartProps {
   data: DailyRevenueData[];
-  currentMonth: 'jan' | 'feb' | 'mar' | 'abr' | 'may' | 'jun' | 'jul';
+  currentMonth: 'jan' | 'feb' | 'mar' | 'abr' | 'may' | 'jun' | 'jul' | 'aug';
   accumulatedRevenue: number;
   formatCurrency: (value: number) => string;
   CustomLegend: (value: string) => React.ReactNode;
@@ -39,7 +39,8 @@ export const DailyRevenueChart: React.FC<DailyRevenueChartProps> = ({
     abr: { name: 'Abril', short: 'Abr' },
     may: { name: 'Mayo', short: 'May' },
     jun: { name: 'Junio', short: 'Jun' },
-    jul: { name: 'Julio', short: 'Jul' }
+    jul: { name: 'Julio', short: 'Jul' },
+    aug: { name: 'Agosto', short: 'Ago' }
   };
   const { name: monthName, short: monthShort } = monthMap[currentMonth];
 

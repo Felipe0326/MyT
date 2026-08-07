@@ -12,6 +12,7 @@ interface DailyEvolutionChartProps {
   CustomLegend: (value: string) => React.ReactNode;
   CustomizedDot: (props: any) => React.ReactNode;
   onFilterDate?: (date: Date) => void;
+  description?: string;
 }
 
 export const DailyEvolutionChart: React.FC<DailyEvolutionChartProps> = ({
@@ -19,6 +20,7 @@ export const DailyEvolutionChart: React.FC<DailyEvolutionChartProps> = ({
   maxProcedures,
   formatCurrency,
   onFilterDate,
+  description = "Modalidad presencial vs digital. Selecciona un día para filtrar todo el tablero.",
 }) => {
   const dailyData = useMemo(() => {
     const map = new Map<string, any>();
@@ -31,24 +33,28 @@ export const DailyEvolutionChart: React.FC<DailyEvolutionChartProps> = ({
           day: item.day,
           digital: 0,
           traditional: 0,
+          unclassified: 0,
           total: 0,
         });
       }
       const dayData = map.get(item.date);
       dayData.digital += item.digital || 0;
       dayData.traditional += item.traditional || 0;
+      dayData.unclassified += item.unclassified || 0;
       dayData.total += item.total || 0;
     });
 
     return Array.from(map.values()).sort((left: any, right: any) => left.day - right.day);
   }, [data]);
 
+  const hasUnclassified = dailyData.some((item) => item.unclassified > 0);
+
   const yAxisMax = Math.max(100, Math.ceil(maxProcedures / 100) * 100);
 
   return (
     <ChartContainer
       title="Evolución diaria de trámites"
-      description="Modalidad presencial vs digital. Selecciona un día para filtrar todo el tablero."
+      description={description}
     >
       <div className="h-[260px] w-full sm:h-[340px]">
         <SafeResponsiveContainer>
@@ -69,6 +75,10 @@ export const DailyEvolutionChart: React.FC<DailyEvolutionChartProps> = ({
               <linearGradient id="colorTrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={COLORS.traditional} stopOpacity={0.3}/>
                 <stop offset="95%" stopColor={COLORS.traditional} stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorUnclassified" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#94a3b8" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLORS.grid} />
@@ -119,6 +129,20 @@ export const DailyEvolutionChart: React.FC<DailyEvolutionChartProps> = ({
               dot={false}
               activeDot={{ r: 6, strokeWidth: 0, fill: COLORS.traditional }} isAnimationActive={false}
             />
+            {hasUnclassified && (
+              <Area
+                type="monotone"
+                dataKey="unclassified"
+                name="Sin clasificar"
+                stroke="#94a3b8"
+                strokeWidth={2}
+                fill="url(#colorUnclassified)"
+                fillOpacity={1}
+                dot={false}
+                activeDot={{ r: 5, strokeWidth: 0, fill: '#94a3b8' }}
+                isAnimationActive={false}
+              />
+            )}
           </AreaChart>
         </SafeResponsiveContainer>
       </div>

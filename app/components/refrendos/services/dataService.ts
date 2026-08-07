@@ -256,6 +256,7 @@ export interface TramiteData {
   total: number;
   digital: number;
   traditional: number;
+  unclassified?: number;
   total2024?: number;
   total2025?: number;
   hora?: number;
@@ -771,8 +772,9 @@ function buildRevenueDataset(rows: RecaudacionRow[]): RevenueDataset {
 
 export async function fetchRecaudacionDashboard(
   signal?: AbortSignal,
+  endpoint = "/api/refrendos/recaudacion",
 ): Promise<RecaudacionDashboardData> {
-  const response = await fetch("/api/refrendos/recaudacion", {
+  const response = await fetch(endpoint, {
     headers: { Accept: "application/json" },
     credentials: "same-origin",
     cache: "no-store",
@@ -810,6 +812,7 @@ export const getAprilRevenueData = () => getRevenueByMonth('04');
 export const getMayRevenueData = () => getRevenueByMonth('05');
 export const getJuneRevenueData = () => getRevenueByMonth('06');
 export const getJulyRevenueData = () => getRevenueByMonth('07');
+export const getAugustRevenueData = () => getRevenueByMonth('08');
 
 export const getAggregatedStats = (data: TramiteData[]) => {
   const stats = data.reduce((acc, curr) => {

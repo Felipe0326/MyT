@@ -89,6 +89,7 @@ const MONTHS = [
   { label: "Mayo", start: "2026-05-01", end: "2026-05-31" },
   { label: "Junio", start: "2026-06-01", end: "2026-06-30" },
   { label: "Julio", start: "2026-07-01", end: "2026-07-31" },
+  { label: "Agosto", start: "2026-08-01", end: "2026-08-31" },
 ] as const;
 
 const AUTO_REFRESH_INTERVAL_MS = 60 * 60 * 1000;

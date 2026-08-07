@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ChartVisibilityProvider } from "../SafeResponsiveContainer";
+import { SmoothFilterSelect } from "../SmoothFilterSelect";
 import {
   EMPTY_RECAUDACION_DASHBOARD,
   fetchRecaudacionDashboard,
@@ -206,10 +207,13 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
     };
   }), [dashboard.dailyTrend, modalidad]);
 
-  const maxProcedures = useMemo(
-    () => Math.max(0, ...chartData.map((row) => row.total)),
-    [chartData],
-  );
+  const maxProcedures = useMemo(() => {
+    const totalsByDay = new Map<string, number>();
+    chartData.forEach((row) => {
+      totalsByDay.set(row.date, (totalsByDay.get(row.date) ?? 0) + row.total);
+    });
+    return Math.max(0, ...totalsByDay.values());
+  }, [chartData]);
 
   function changeMonth(month: MonthKey) {
     setCurrentMonth(month);
@@ -297,8 +301,8 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
       <div className="min-h-screen bg-[#F5F4F0] pb-12 font-sans text-[#2E332A]">
         <header className="relative bg-[#F5F4F0] px-3 py-4 text-[#2E332A] sm:px-5 lg:px-6">
           <div className="relative w-full rounded-[26px] border border-[#dedccf] bg-white px-4 py-4 shadow-[0_8px_24px_rgba(46,51,42,0.07)] sm:px-6">
-            <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[minmax(280px,1fr)_auto_minmax(180px,1fr)] xl:items-center">
-              <div className="flex min-w-0 items-center gap-4 xl:justify-self-start">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 items-center gap-4">
                 <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#d8d3c7] bg-[#ebe7dd] shadow-sm">
                   <FileText className="h-7 w-7 text-[#7B543E]" />
                   {isLoading && <Loader2 className="absolute -right-1 -top-1 h-4 w-4 animate-spin text-[#74785C]" />}
@@ -310,28 +314,30 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
                 </div>
               </div>
 
-              <div className="scrollbar-hide flex justify-center overflow-x-auto pb-1 xl:pb-0">
-                <div className="inline-flex min-w-max items-center rounded-2xl border border-[#d8d3c7] bg-[#e9e6dd] p-1.5">
-                  {(Object.keys(MONTH_CONFIG) as MonthKey[]).map((month) => (
-                    <ToggleBtn
-                      key={month}
-                      active={currentMonth === month}
-                      onClick={() => changeMonth(month)}
-                      label={MONTH_CONFIG[month].short}
-                    />
-                  ))}
+              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
+                <div className="scrollbar-hide min-w-0 overflow-x-auto pb-1 sm:pb-0">
+                  <div className="inline-flex min-w-max items-center rounded-2xl border border-[#d8d3c7] bg-[#e9e6dd] p-1.5">
+                    {(Object.keys(MONTH_CONFIG) as MonthKey[]).map((month) => (
+                      <ToggleBtn
+                        key={month}
+                        active={currentMonth === month}
+                        onClick={() => changeMonth(month)}
+                        label={MONTH_CONFIG[month].short}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => void handleManualUpdate()}
-                disabled={isUpdating || isLoading}
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#d8d3c7] bg-white px-5 py-2.5 text-xs font-bold text-[#526647] shadow-sm transition hover:bg-[#ebe7dd] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto xl:justify-self-end"
-              >
-                {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Actualizar
-              </button>
+                <button
+                  type="button"
+                  onClick={() => void handleManualUpdate()}
+                  disabled={isUpdating || isLoading}
+                  className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-[#d8d3c7] bg-white px-5 py-2.5 text-xs font-bold text-[#526647] shadow-sm transition hover:bg-[#ebe7dd] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                >
+                  {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  Actualizar
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -414,33 +420,43 @@ function DateField({ label, value, onChange }: { label: string; value: string; o
       <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#74785C]">
         <CalendarDays className="h-3.5 w-3.5" /> {label}
       </span>
-      <input type="date" value={value} onChange={(event) => onChange(event.target.value)} className="h-12 w-full rounded-xl border border-[#dedccf] bg-[#faf9f5] px-4 text-sm text-[#2E332A] outline-none focus:border-[#74785C] focus:ring-4 focus:ring-[#74785C]/10" />
+      <input type="date" min="2026-01-01" value={value} onChange={(event) => onChange(event.target.value)} className="h-12 w-full rounded-xl border border-[#dedccf] bg-[#faf9f5] px-4 text-sm text-[#2E332A] outline-none focus:border-[#74785C] focus:ring-4 focus:ring-[#74785C]/10" />
     </label>
   );
 }
 
 function SelectField({ label, value, onChange, options, placeholder }: { label: string; value: string; onChange: (value: string) => void; options: Array<{ id: number; nombre: string }>; placeholder: string }) {
   return (
-    <label className="space-y-2">
+    <div className="space-y-2">
       <span className="block text-[10px] font-black uppercase tracking-widest text-[#74785C]">{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="h-12 w-full rounded-xl border border-[#dedccf] bg-[#faf9f5] px-3 text-sm font-semibold text-[#2E332A] outline-none focus:border-[#74785C] focus:ring-4 focus:ring-[#74785C]/10">
-        <option value="">{placeholder}</option>
-        {options.map((option) => <option key={option.id} value={option.id}>{option.nombre}</option>)}
-      </select>
-    </label>
+      <SmoothFilterSelect
+        value={value}
+        onChange={onChange}
+        options={options.map((option) => ({ value: String(option.id), label: option.nombre }))}
+        placeholder={placeholder}
+        ariaLabel={label}
+        searchPlaceholder={`Buscar ${label.toLocaleLowerCase("es-MX")}...`}
+        searchable
+      />
+    </div>
   );
 }
 
 function ModeFilter({ value, onChange }: { value: Modalidad; onChange: (value: Modalidad) => void }) {
   return (
-    <label className="space-y-2">
+    <div className="space-y-2">
       <span className="block text-[10px] font-black uppercase tracking-widest text-[#74785C]">Modalidad del trámite</span>
-      <select value={value} onChange={(event) => onChange(event.target.value as Modalidad)} className="h-12 w-full rounded-xl border border-[#dedccf] bg-[#faf9f5] px-3 text-sm font-semibold text-[#2E332A] outline-none focus:border-[#74785C] focus:ring-4 focus:ring-[#74785C]/10">
-        <option value="">Todas las modalidades</option>
-        <option value="en_linea">En línea</option>
-        <option value="presencial">Presencial</option>
-      </select>
-    </label>
+      <SmoothFilterSelect
+        value={value}
+        onChange={(nextValue) => onChange(nextValue as Modalidad)}
+        options={[
+          { value: "en_linea", label: "En línea" },
+          { value: "presencial", label: "Presencial" },
+        ]}
+        placeholder="Todas las modalidades"
+        ariaLabel="Modalidad del trámite"
+      />
+    </div>
   );
 }
 

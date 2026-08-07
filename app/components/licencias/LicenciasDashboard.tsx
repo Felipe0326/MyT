@@ -295,8 +295,8 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
   return (
     <ChartVisibilityProvider active={isActive}>
       <div className="min-h-screen bg-[#F5F4F0] pb-12 font-sans text-[#2E332A]">
-        <header className="relative border-b border-[#dedccf] bg-[#F5F4F0] px-3 pb-10 pt-5 text-[#2E332A] sm:px-5 lg:px-6">
-          <div className="relative mx-auto max-w-[1600px]">
+        <header className="relative bg-[#F5F4F0] px-3 py-4 text-[#2E332A] sm:px-5 lg:px-6">
+          <div className="relative w-full rounded-[26px] border border-[#dedccf] bg-white px-4 py-4 shadow-[0_8px_24px_rgba(46,51,42,0.07)] sm:px-6">
             <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[minmax(280px,1fr)_auto_minmax(180px,1fr)] xl:items-center">
               <div className="flex min-w-0 items-center gap-4 xl:justify-self-start">
                 <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#d8d3c7] bg-[#ebe7dd] shadow-sm">
@@ -336,7 +336,7 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
           </div>
         </header>
 
-        <main className="relative z-10 mx-auto -mt-7 w-full max-w-[1600px] space-y-7 px-3 sm:px-5 lg:px-6">
+        <main className="relative z-10 mx-auto w-full max-w-[1600px] space-y-7 px-3 sm:px-5 lg:px-6">
           {error && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 shadow-sm">{error}</div>
           )}
@@ -350,7 +350,7 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
               <span className="text-xs font-semibold text-slate-400">Vista actual: {modeLabel}</span>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(155px,0.8fr)_minmax(155px,0.8fr)_minmax(190px,1fr)_minmax(190px,1fr)_minmax(270px,1.2fr)_auto] xl:items-end">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(155px,0.8fr)_minmax(155px,0.8fr)_minmax(190px,1fr)_minmax(190px,1fr)_minmax(190px,1fr)_auto] xl:items-end">
               <DateField label="Fecha inicial" value={dateRange.start} onChange={(value) => { setDateRange((current) => ({ ...current, start: value })); setPage(1); }} />
               <DateField label="Fecha final" value={dateRange.end} onChange={(value) => { setDateRange((current) => ({ ...current, end: value })); setPage(1); }} />
               <SelectField label="Tipo de trámite" value={tipoTramiteId} onChange={changeTipoTramite} options={dashboard.filters.tiposTramite} placeholder="Todos los trámites" />
@@ -432,22 +432,15 @@ function SelectField({ label, value, onChange, options, placeholder }: { label: 
 }
 
 function ModeFilter({ value, onChange }: { value: Modalidad; onChange: (value: Modalidad) => void }) {
-  const options: Array<{ value: Modalidad; label: string }> = [
-    { value: "", label: "Todos" },
-    { value: "en_linea", label: "En línea" },
-    { value: "presencial", label: "Presencial" },
-  ];
   return (
-    <fieldset className="space-y-2">
-      <legend className="text-[10px] font-black uppercase tracking-widest text-[#74785C]">Modalidad del trámite</legend>
-      <div className="grid h-12 grid-cols-3 rounded-xl border border-[#dedccf] bg-[#efede6] p-1">
-        {options.map((option) => (
-          <button key={option.value || "all"} type="button" onClick={() => onChange(option.value)} className={`rounded-lg px-2 text-[11px] font-bold transition ${value === option.value ? "bg-white text-[#2E332A] shadow-sm" : "text-[#77746c] hover:text-[#2E332A]"}`}>
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </fieldset>
+    <label className="space-y-2">
+      <span className="block text-[10px] font-black uppercase tracking-widest text-[#74785C]">Modalidad del trámite</span>
+      <select value={value} onChange={(event) => onChange(event.target.value as Modalidad)} className="h-12 w-full rounded-xl border border-[#dedccf] bg-[#faf9f5] px-3 text-sm font-semibold text-[#2E332A] outline-none focus:border-[#74785C] focus:ring-4 focus:ring-[#74785C]/10">
+        <option value="">Todas las modalidades</option>
+        <option value="en_linea">En línea</option>
+        <option value="presencial">Presencial</option>
+      </select>
+    </label>
   );
 }
 

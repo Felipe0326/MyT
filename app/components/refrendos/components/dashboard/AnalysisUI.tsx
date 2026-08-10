@@ -19,14 +19,15 @@ export const SectionTag: React.FC<{ color: 'red' | 'grn' | 'mora' | 'y' | 'indig
 };
 
 export const KPI: React.FC<{ label: string; value: React.ReactNode; sub: string; color?: 'r' | 'g' | 'y' | 'm' | 'i' | 'e' }> = ({ label, value, sub, color }) => {
-  const colorClass = {
+  const colorClasses = {
     r: 'text-rose-600',
     g: 'text-emerald-700',
     y: 'text-amber-600',
     m: 'text-stone-700',
     i: 'text-emerald-700',
     e: 'text-emerald-700',
-  }[color || ''] || 'text-stone-800';
+  };
+  const colorClass = color ? colorClasses[color] : 'text-stone-800';
 
   return (
     <div className="bg-white p-6">

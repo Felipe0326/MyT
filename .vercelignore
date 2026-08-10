@@ -2,9 +2,5 @@
 .env.*.local
 node_modules
 .next
-.vinext
-.output
-dist
-work
-outputs
 *.zip
+*.log

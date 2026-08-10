@@ -6,8 +6,8 @@ export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   return handleDashboardRefresh(request, {
-    dashboard: "nps",
-    sectionSlug: "dashboard-nps",
-    successMessage: "La información de NPS se actualizó correctamente.",
+    dashboard: "refrendos",
+    sectionSlug: "dashboard-2",
+    successMessage: "La actualización de Refrendos fue solicitada correctamente.",
   });
 }

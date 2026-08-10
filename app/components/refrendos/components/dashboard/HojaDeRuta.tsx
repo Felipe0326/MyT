@@ -1,5 +1,5 @@
 import React from 'react';
-import { Callout, KPI, Note, SectionTag } from './AnalysisUI';
+import { Callout, KPI, Note } from './AnalysisUI';
 
 export const HojaDeRuta: React.FC = () => {
   return (

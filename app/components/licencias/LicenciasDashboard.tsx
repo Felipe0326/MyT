@@ -96,11 +96,15 @@ const EMPTY_RESPONSE: LicenciasResponse = {
   actualizado_en: null,
 };
 
-const UPDATE_WEBHOOK =
-  process.env.NEXT_PUBLIC_N8N_LICENCIAS_WEBHOOK_URL?.trim()
-  || "https://lowcode.morelos.gob.mx/webhook/actualizar-licencias";
-
-export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) {
+export function LicenciasDashboard({
+  isActive = true,
+  csrfToken,
+  canUpdate = false,
+}: {
+  isActive?: boolean;
+  csrfToken: string;
+  canUpdate?: boolean;
+}) {
   const [selectedYear, setSelectedYear] = useState<LicenseYear>(2026);
   const [currentMonth, setCurrentMonth] = useState<MonthKey>("aug");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
@@ -179,16 +183,20 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
   }, [isActive]);
 
   async function handleManualUpdate() {
-    if (isUpdating) return;
+    if (isUpdating || !canUpdate) return;
     setIsUpdating(true);
     setError(null);
     try {
-      const response = await fetch(UPDATE_WEBHOOK, {
+      const response = await fetch("/api/licencias/refresh", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ origen: "dashboard-licencias", solicitado_en: new Date().toISOString() }),
+        headers: { "x-csrf-token": csrfToken },
+        credentials: "same-origin",
+        cache: "no-store",
       });
-      if (!response.ok) throw new Error(`n8n respondió ${response.status}.`);
+      const payload = await response.json() as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || "No fue posible solicitar la actualización.");
+      }
       await new Promise((resolve) => window.setTimeout(resolve, 2500));
       await fetchData();
     } catch (updateError) {
@@ -368,15 +376,17 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => void handleManualUpdate()}
-                  disabled={isUpdating || isLoading}
-                  className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-[#d8d3c7] bg-white px-5 py-2.5 text-xs font-bold text-[#526647] shadow-sm transition hover:bg-[#ebe7dd] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                >
-                  {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                  Actualizar
-                </button>
+                {canUpdate && (
+                  <button
+                    type="button"
+                    onClick={() => void handleManualUpdate()}
+                    disabled={isUpdating || isLoading}
+                    className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-[#d8d3c7] bg-white px-5 py-2.5 text-xs font-bold text-[#526647] shadow-sm transition hover:bg-[#ebe7dd] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                  >
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    Actualizar
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -418,8 +428,6 @@ export function LicenciasDashboard({ isActive = true }: { isActive?: boolean }) 
             data={chartData}
             maxProcedures={maxProcedures}
             formatCurrency={(value) => value.toLocaleString("es-MX")}
-            CustomLegend={(value) => value}
-            CustomizedDot={() => null}
             onFilterDate={selectDate}
             description="Comparativo diario de trámites en línea y presenciales. Selecciona un día para filtrar."
           />

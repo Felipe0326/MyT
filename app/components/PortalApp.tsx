@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Activity,
@@ -24,11 +25,24 @@ import type { AppSection } from "../../lib/session";
 import type { SessionData } from "../types";
 import { AcceptInvitation } from "./AcceptInvitation";
 import { LoginScreen } from "./LoginScreen";
-import { LicenciasDashboard } from "./licencias/LicenciasDashboard";
-import { NpsDashboard } from "./NpsDashboard";
-import { RefrendosDashboard } from "./refrendos/RefrendosDashboard";
 import { ResetPassword } from "./ResetPassword";
-import { UsersAdmin } from "./UsersAdmin";
+
+const NpsDashboard = dynamic(
+  () => import("./NpsDashboard").then((module) => module.NpsDashboard),
+  { loading: DashboardLoading },
+);
+const RefrendosDashboard = dynamic(
+  () => import("./refrendos/RefrendosDashboard").then((module) => module.RefrendosDashboard),
+  { loading: DashboardLoading },
+);
+const LicenciasDashboard = dynamic(
+  () => import("./licencias/LicenciasDashboard").then((module) => module.LicenciasDashboard),
+  { loading: DashboardLoading },
+);
+const UsersAdmin = dynamic(
+  () => import("./UsersAdmin").then((module) => module.UsersAdmin),
+  { loading: DashboardLoading },
+);
 
 export function PortalApp() {
   const [session, setSession] = useState<SessionData | null>(null);
@@ -131,6 +145,14 @@ export function PortalApp() {
   return <ApplicationShell session={session} idleWarning={idleWarning} onLogout={logout} />;
 }
 
+function DashboardLoading() {
+  return (
+    <div className="app-loading" role="status" aria-live="polite">
+      <span>Cargando módulo seguro…</span>
+    </div>
+  );
+}
+
 function ApplicationShell({ session, idleWarning, onLogout }: { session: SessionData; idleWarning: boolean; onLogout: () => Promise<void> }) {
   const firstSection = session.sections.find((section) => section.availability === "disponible" || section.slug === "dashboard-2")?.slug ?? session.sections[0]?.slug ?? "empty";
   const [active, setActive] = useState(firstSection);
@@ -218,17 +240,29 @@ function ApplicationShell({ session, idleWarning, onLogout }: { session: Session
         <main className={`workspace-content ${active === "dashboard-nps" || active === "dashboard-2" || active === "dashboard-licencias" ? "full-bleed" : ""}`}>
           {visitedDashboards.includes("dashboard-nps") && (
             <div hidden={active !== "dashboard-nps"}>
-              <NpsDashboard isActive={active === "dashboard-nps"} csrfToken={session.csrfToken} />
+              <NpsDashboard
+                isActive={active === "dashboard-nps"}
+                csrfToken={session.csrfToken}
+                canUpdate={Boolean(session.sections.find((section) => section.slug === "dashboard-nps")?.can_edit)}
+              />
             </div>
           )}
           {visitedDashboards.includes("dashboard-2") && (
             <div hidden={active !== "dashboard-2"}>
-              <RefrendosDashboard isActive={active === "dashboard-2"} />
+              <RefrendosDashboard
+                isActive={active === "dashboard-2"}
+                csrfToken={session.csrfToken}
+                canUpdate={Boolean(session.sections.find((section) => section.slug === "dashboard-2")?.can_edit)}
+              />
             </div>
           )}
           {visitedDashboards.includes("dashboard-licencias") && (
             <div hidden={active !== "dashboard-licencias"}>
-              <LicenciasDashboard isActive={active === "dashboard-licencias"} />
+              <LicenciasDashboard
+                isActive={active === "dashboard-licencias"}
+                csrfToken={session.csrfToken}
+                canUpdate={Boolean(session.sections.find((section) => section.slug === "dashboard-licencias")?.can_edit)}
+              />
             </div>
           )}
           {active === "usuarios" && session.user.role === "administrador" && <UsersAdmin csrfToken={session.csrfToken} currentUserId={session.user.id} />}

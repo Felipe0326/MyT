@@ -28,7 +28,7 @@ const contentSecurityPolicy = [
   "style-src-attr 'unsafe-inline'",
   `script-src ${scriptSources}`,
   "script-src-attr 'none'",
-  "connect-src 'self' https://lowcode.morelos.gob.mx",
+  "connect-src 'self'",
   /*
    * No se agrega en local para evitar que HTTP localhost
    * se intente convertir en HTTPS.
@@ -78,10 +78,12 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: contentSecurityPolicy,
   },
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains",
-  },
+  ...(isDevelopment
+    ? []
+    : [{
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains",
+      }]),
 ];
 
 const noStoreHeaders = [
@@ -105,10 +107,6 @@ const nextConfig: NextConfig = {
 
   images: {
     unoptimized: true,
-  },
-
-  typescript: {
-    ignoreBuildErrors: true,
   },
 
   async headers() {

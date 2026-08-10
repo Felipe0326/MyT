@@ -4,13 +4,22 @@ import { SafeResponsiveContainer } from '../../../SafeResponsiveContainer';
 import { ChartContainer } from './ChartContainer';
 import { CustomTooltip } from './CustomTooltip';
 import { COLORS } from '../../constants';
+import type { TramiteData } from '../../services/dataService';
+
+type DailyAggregatedData = {
+  date: string;
+  fullDate: Date;
+  day: number;
+  digital: number;
+  traditional: number;
+  unclassified: number;
+  total: number;
+};
 
 interface DailyEvolutionChartProps {
-  data: any[];
+  data: TramiteData[];
   maxProcedures: number;
   formatCurrency: (value: number) => string;
-  CustomLegend: (value: string) => React.ReactNode;
-  CustomizedDot: (props: any) => React.ReactNode;
   onFilterDate?: (date: Date) => void;
   description?: string;
 }
@@ -23,11 +32,10 @@ export const DailyEvolutionChart: React.FC<DailyEvolutionChartProps> = ({
   description = "Modalidad presencial vs digital. Selecciona un día para filtrar todo el tablero.",
 }) => {
   const dailyData = useMemo(() => {
-    const map = new Map<string, any>();
+    const map = new Map<string, DailyAggregatedData>();
 
     data.forEach((item) => {
-      if (!map.has(item.date)) {
-        map.set(item.date, {
+      const current = map.get(item.date) ?? {
           date: item.date,
           fullDate: item.fullDate,
           day: item.day,
@@ -35,16 +43,15 @@ export const DailyEvolutionChart: React.FC<DailyEvolutionChartProps> = ({
           traditional: 0,
           unclassified: 0,
           total: 0,
-        });
-      }
-      const dayData = map.get(item.date);
-      dayData.digital += item.digital || 0;
-      dayData.traditional += item.traditional || 0;
-      dayData.unclassified += item.unclassified || 0;
-      dayData.total += item.total || 0;
+        };
+      current.digital += item.digital || 0;
+      current.traditional += item.traditional || 0;
+      current.unclassified += item.unclassified || 0;
+      current.total += item.total || 0;
+      map.set(item.date, current);
     });
 
-    return Array.from(map.values()).sort((left: any, right: any) => left.day - right.day);
+    return Array.from(map.values()).sort((left, right) => left.day - right.day);
   }, [data]);
 
   const hasUnclassified = dailyData.some((item) => item.unclassified > 0);
@@ -62,7 +69,10 @@ export const DailyEvolutionChart: React.FC<DailyEvolutionChartProps> = ({
             data={dailyData}
             margin={{ top: 10, right: 6, left: -8, bottom: 0 }}
             onClick={(state) => {
-              const row = state?.activePayload?.[0]?.payload as { fullDate?: Date } | undefined;
+              const index = typeof state?.activeTooltipIndex === 'number'
+                ? state.activeTooltipIndex
+                : -1;
+              const row = index >= 0 ? dailyData[index] : undefined;
               if (row?.fullDate && onFilterDate) onFilterDate(row.fullDate);
             }}
             style={{ cursor: onFilterDate ? 'pointer' : 'default' }}

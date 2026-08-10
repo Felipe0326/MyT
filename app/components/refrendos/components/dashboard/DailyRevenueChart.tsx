@@ -12,7 +12,6 @@ interface DailyRevenueChartProps {
   currentMonth: 'jan' | 'feb' | 'mar' | 'abr' | 'may' | 'jun' | 'jul' | 'aug';
   accumulatedRevenue: number;
   formatCurrency: (value: number) => string;
-  CustomLegend: (value: string) => React.ReactNode;
   onDateSelect?: (date: string) => void;
 }
 
@@ -21,15 +20,8 @@ export const DailyRevenueChart: React.FC<DailyRevenueChartProps> = ({
   currentMonth,
   accumulatedRevenue,
   formatCurrency,
-  CustomLegend,
   onDateSelect,
 }) => {
-  const [isMounted, setIsMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const totalRevenue = data.reduce((acc, curr) => acc + curr.publico + curr.privado, 0);
 
   const monthMap = {
@@ -42,7 +34,7 @@ export const DailyRevenueChart: React.FC<DailyRevenueChartProps> = ({
     jul: { name: 'Julio', short: 'Jul' },
     aug: { name: 'Agosto', short: 'Ago' }
   };
-  const { name: monthName, short: monthShort } = monthMap[currentMonth];
+  const { short: monthShort } = monthMap[currentMonth];
 
   return (
     <ChartContainer
@@ -71,7 +63,10 @@ export const DailyRevenueChart: React.FC<DailyRevenueChartProps> = ({
             data={data}
             margin={{ top: 10, right: 6, left: -8, bottom: 0 }}
             onClick={(state) => {
-              const row = state?.activePayload?.[0]?.payload as { date?: string } | undefined;
+              const index = typeof state?.activeTooltipIndex === 'number'
+                ? state.activeTooltipIndex
+                : -1;
+              const row = index >= 0 ? data[index] : undefined;
               if (row?.date) onDateSelect?.(row.date);
             }}
             style={{ cursor: onDateSelect ? 'pointer' : 'default' }}

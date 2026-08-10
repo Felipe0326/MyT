@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 
 interface SeriesSummaryProps {
-  data: any[];
+  data: object[];
   keys: string[];
   colors: Record<string, string>;
   formatMoney?: boolean;
@@ -20,8 +20,10 @@ export const SeriesSummary: React.FC<SeriesSummaryProps> = ({
   vertical,
   formatCurrency
 }) => {
-  const totals = keys.reduce((acc: any, key: string) => {
-    acc[key] = data.reduce((sum: number, item: any) => sum + (item[key] || 0), 0);
+  const totals = keys.reduce((acc, key) => {
+    acc[key] = data.reduce((sum, item) => (
+      sum + (Number((item as Record<string, unknown>)[key]) || 0)
+    ), 0);
     return acc;
   }, {} as Record<string, number>);
 

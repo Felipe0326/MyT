@@ -584,16 +584,20 @@ export const fetchLiveTramiteData = async (): Promise<TramiteData[]> => {
   });
 };
 
-export const getProcessedData = (liveData: any[] = []): TramiteData[] => {
+type LegacyRefrendoRecord = Record<string, unknown>;
+
+export const getProcessedData = (liveData: unknown[] = []): TramiteData[] => {
   if (!liveData || !Array.isArray(liveData)) return [];
   
   try {
     return liveData
-      .filter(item => item && item.mes != null && item.dia != null)
+      .filter((item): item is LegacyRefrendoRecord => (
+        typeof item === 'object' && item !== null && 'mes' in item && 'dia' in item
+      ))
       .map(item => {
-        const dia = parseInt(item.dia) || 1;
-        const mes = parseInt(item.mes) || 1;
-        const anio = parseInt(item.anio) || 2026;
+        const dia = Number.parseInt(String(item.dia ?? '')) || 1;
+        const mes = Number.parseInt(String(item.mes ?? '')) || 1;
+        const anio = Number.parseInt(String(item.anio ?? '')) || 2026;
         
         return {
           date: `${dia.toString().padStart(2, '0')}/${mes.toString().padStart(2, '0')}`,
@@ -601,13 +605,13 @@ export const getProcessedData = (liveData: any[] = []): TramiteData[] => {
           day: dia,
           month: mes,
           year: anio,
-          dayOfWeek: item.dia_semana || '',
-          total: parseInt(item.total_registros) || 0,
-          digital: parseInt(item.es_digital) || 0,
-          traditional: parseInt(item.es_tradicional) || 0,
+          dayOfWeek: String(item.dia_semana ?? ''),
+          total: Number.parseInt(String(item.total_registros ?? '')) || 0,
+          digital: Number.parseInt(String(item.es_digital ?? '')) || 0,
+          traditional: Number.parseInt(String(item.es_tradicional ?? '')) || 0,
           total2024: 0,
           total2025: 0,
-          hora: item.hora != null ? parseInt(item.hora) : undefined
+          hora: item.hora != null ? Number.parseInt(String(item.hora)) : undefined
         };
       })
       .filter(item => !isNaN(item.fullDate.getTime()))
@@ -664,19 +668,15 @@ export const getHistoricalMonthlyData = (liveData: TramiteData[] = []): Historic
 
   return months.map((name, i) => {
     const monthIndex = i + 1;
-    let year2026Val = 0;
-    
-    if (liveTotals[monthIndex] !== undefined) {
-      year2026Val = liveTotals[monthIndex];
-    } else {
-      year2026Val = monthIndex === 1 ? 91936 
+    const year2026Val = liveTotals[monthIndex] !== undefined
+      ? liveTotals[monthIndex]
+      : monthIndex === 1 ? 91936 
                   : monthIndex === 2 ? 81036 
                   : monthIndex === 3 ? 88447 
                   : monthIndex === 4 ? 60283 
                   : monthIndex === 5 ? 3489 
                   : monthIndex === 6 ? 111 
                   : 0;
-    }
 
     return {
       monthName: name,

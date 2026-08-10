@@ -97,9 +97,11 @@ const AUTO_REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 export function NpsDashboard({
   isActive = true,
   csrfToken,
+  canUpdate = false,
 }: {
   isActive?: boolean;
   csrfToken: string;
+  canUpdate?: boolean;
 }) {
   const [dashboard, setDashboard] = useState<DashboardResponse>(EMPTY_RESPONSE);
   const [selectedDependencia, setSelectedDependencia] = useState("");
@@ -132,7 +134,7 @@ export function NpsDashboard({
       if (dateRange.start) params.set("dateFrom", dateRange.start);
       if (dateRange.end) params.set("dateTo", dateRange.end);
 
-      const response = await fetch(`/api/survey-data?${params.toString()}`, {
+      const response = await fetch(`/api/nps?${params.toString()}`, {
         cache: "no-store",
         credentials: "same-origin",
         signal,
@@ -241,7 +243,7 @@ export function NpsDashboard({
   }
 
   async function refreshNpsData() {
-    if (triggeringUpdate) return;
+    if (triggeringUpdate || !canUpdate) return;
 
     setTriggeringUpdate(true);
     setUpdateMessage(null);
@@ -355,20 +357,22 @@ export function NpsDashboard({
               })}
             </div>
 
-            <button
-              type="button"
-              onClick={() => void refreshNpsData()}
-              disabled={triggeringUpdate}
-              className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#526647] px-5 py-2.5 text-xs font-black uppercase tracking-[0.14em] text-white shadow-sm transition hover:bg-[#46583d] disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto"
-              title="Ejecutar el flujo de n8n y volver a consultar los datos de NPS"
-            >
-              {triggeringUpdate ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              {triggeringUpdate ? "Actualizando…" : "Actualizar"}
-            </button>
+            {canUpdate && (
+              <button
+                type="button"
+                onClick={() => void refreshNpsData()}
+                disabled={triggeringUpdate}
+                className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#526647] px-5 py-2.5 text-xs font-black uppercase tracking-[0.14em] text-white shadow-sm transition hover:bg-[#46583d] disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto"
+                title="Solicitar la actualización protegida y volver a consultar los datos de NPS"
+              >
+                {triggeringUpdate ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                {triggeringUpdate ? "Actualizando…" : "Actualizar"}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -486,7 +490,10 @@ export function NpsDashboard({
                   data={trendData}
                   margin={{ top: 15, right: 18, left: -12, bottom: 5 }}
                   onClick={(state) => {
-                    const row = state?.activePayload?.[0]?.payload as { month?: string } | undefined;
+                    const index = typeof state?.activeTooltipIndex === "number"
+                      ? state.activeTooltipIndex
+                      : -1;
+                    const row = index >= 0 ? trendData[index] : undefined;
                     if (row?.month) selectTrendMonth(row.month);
                   }}
                   style={{ cursor: "pointer" }}

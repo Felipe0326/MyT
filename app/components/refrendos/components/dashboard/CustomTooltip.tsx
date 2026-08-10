@@ -27,13 +27,33 @@ const PercentageBadge: React.FC<PercentageBadgeProps> = ({ current, previous, ye
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: any[];
+  payload?: TooltipEntry[];
   label?: string;
   view?: string;
-  chartData?: any[];
+  chartData?: object[];
   formatCurrency: (value: number) => string;
   showVariation?: boolean;
 }
+
+type TooltipRecord = Record<string, unknown> & {
+  fill?: string;
+  total?: number;
+  total2024?: number;
+  total2025?: number;
+  gestores?: number;
+  totalGeneral?: number;
+  monthName?: string;
+  date?: string;
+};
+
+type TooltipEntry = {
+  payload: TooltipRecord;
+  value?: number | string;
+  dataKey?: string | number;
+  name?: string | number;
+  color?: string;
+  stroke?: string;
+};
 
 export const CustomTooltip: React.FC<CustomTooltipProps> = ({ 
   active, 
@@ -68,19 +88,25 @@ export const CustomTooltip: React.FC<CustomTooltipProps> = ({
       )
     }
 
-    const currentIndex = chartData ? chartData.findIndex((item: any) => item.monthName === label || item.date === label) : -1;
-    const prevItem = currentIndex > 0 ? chartData[currentIndex - 1] : null;
+    const currentIndex = chartData
+      ? chartData.findIndex((item) => (
+          objectValue(item, 'monthName') === label || objectValue(item, 'date') === label
+        ))
+      : -1;
+    const prevItem = chartData && currentIndex > 0 ? chartData[currentIndex - 1] : null;
 
     return (
       <div className="bg-white border border-slate-200 p-3 sm:p-4 rounded-xl shadow-xl z-50 min-w-[160px] sm:min-w-[200px]">
         <p className="font-bold text-brand-dark mb-2 sm:mb-3 text-xs sm:text-sm border-b border-slate-100 pb-1.5 sm:pb-2">{label}</p>
-        {payload.map((entry: any, index: number) => {
-          const currentVal = entry.value;
-          const prevVal = prevItem ? prevItem[entry.dataKey] : 0;
+        {payload.map((entry, index) => {
+          const dataKey = String(entry.dataKey ?? '');
+          const currentVal = Number(entry.value) || 0;
+          const prevVal = prevItem ? Number(objectValue(prevItem, dataKey)) || 0 : 0;
           const diff = currentVal - prevVal;
           const pct = prevVal ? (diff / prevVal) * 100 : 0;
           const isUp = diff >= 0;
-          const isMoney = currentVal > 1000000 || entry.dataKey === 'importe' || entry.name?.toLowerCase().includes('recaudación') || entry.name?.toLowerCase().includes('refrendo público'); 
+          const entryName = typeof entry.name === 'string' ? entry.name.toLowerCase() : '';
+          const isMoney = currentVal > 1000000 || dataKey === 'importe' || entryName.includes('recaudación') || entryName.includes('refrendo público'); 
           const displayValue = isMoney ? formatCurrency(currentVal) : currentVal.toLocaleString();
 
           return (
@@ -108,8 +134,8 @@ export const CustomTooltip: React.FC<CustomTooltipProps> = ({
         {view === 'total' && (
           <div className="mt-3 bg-slate-50 p-2 rounded-lg">
              <p className="text-[10px] text-slate-400 font-semibold uppercase mb-1">Comparativa Histórica</p>
-             {total2025 > 0 && <PercentageBadge current={total} previous={total2025} year={2025} />}
-             {total2024 > 0 && <PercentageBadge current={total} previous={total2024} year={2024} />}
+             {(total2025 ?? 0) > 0 && <PercentageBadge current={total ?? 0} previous={total2025 ?? 0} year={2025} />}
+             {(total2024 ?? 0) > 0 && <PercentageBadge current={total ?? 0} previous={total2024 ?? 0} year={2024} />}
           </div>
         )}
       </div>
@@ -117,3 +143,7 @@ export const CustomTooltip: React.FC<CustomTooltipProps> = ({
   }
   return null;
 };
+
+function objectValue(value: object, key: string): unknown {
+  return (value as Record<string, unknown>)[key];
+}

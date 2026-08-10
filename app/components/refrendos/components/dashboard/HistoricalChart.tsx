@@ -7,16 +7,16 @@ import { CustomTooltip } from './CustomTooltip';
 import { SeriesSummary } from './SeriesSummary';
 import { History, BarChart3, LineChart as LineChartIcon } from 'lucide-react';
 import { COLORS } from '../../constants';
+import type { HistoricalData, HistoricalMonthlyData } from '../../services/dataService';
 
 interface HistoricalChartProps {
-  historicalData: any[];
-  historicalMonthlyData: any[];
+  historicalData: HistoricalData[];
+  historicalMonthlyData: HistoricalMonthlyData[];
   historicalView: 'annual' | 'monthly';
   setHistoricalView: (view: 'annual' | 'monthly') => void;
   currentMonth: 'jan' | 'feb';
   val2026?: number;
   formatCurrency: (value: number) => string;
-  CustomLegend: (value: string) => React.ReactNode;
 }
 
 export const HistoricalChart: React.FC<HistoricalChartProps> = ({
@@ -27,7 +27,6 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
   currentMonth,
   val2026,
   formatCurrency,
-  CustomLegend
 }) => {
   return (
     <ChartContainer
@@ -81,7 +80,7 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
               />
               {val2026 && <ReferenceLine y={val2026} stroke={COLORS.traditional} strokeDasharray="3 3" label={{ position: 'right', value: '2026', fill: COLORS.traditional, fontSize: 10, fontWeight: 'bold', dy: -10 }} />}
               <Bar dataKey="total" name="Total Refrendos" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={40} isAnimationActive={false}>
-                <LabelList dataKey="total" position="top" offset={10} style={{ fill: COLORS.brown, fontSize: '10px', fontWeight: 'bold' }} formatter={(value: number) => value.toLocaleString()} />
+                <LabelList dataKey="total" position="top" offset={10} style={{ fill: COLORS.brown, fontSize: '10px', fontWeight: 'bold' }} formatter={(value) => Number(value ?? 0).toLocaleString('es-MX')} />
                 {historicalData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.year === 2026 ? COLORS.traditional : "url(#colorTotal)"} />))}
               </Bar>
             </BarChart>

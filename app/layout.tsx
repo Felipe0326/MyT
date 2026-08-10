@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
+import { getAppUrl } from "../lib/env";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -11,10 +11,7 @@ export const viewport: Viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  const origin = `${protocol}://${host}`;
+  const origin = getAppUrl();
   const title = "Movilidad y Transporte | Gobierno de Morelos";
   const description = "Plataforma segura para consultar datos de trámites, refrendos y experiencia ciudadana NPS.";
   return {

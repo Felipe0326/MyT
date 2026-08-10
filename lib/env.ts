@@ -1,3 +1,5 @@
+import "server-only";
+
 type SupabaseEnvironment = {
   url: string;
   publishableKey: string;
@@ -13,10 +15,10 @@ function required(name: string, fallbackName?: string): string {
 }
 
 export function getSupabaseEnvironment(): SupabaseEnvironment {
-  const url = validateServerUrl(required("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"), "SUPABASE_URL");
+  const url = validateServerUrl(required("SUPABASE_URL"), "SUPABASE_URL");
   return {
     url,
-    publishableKey: required("SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    publishableKey: required("SUPABASE_ANON_KEY"),
     secretKey: required("SUPABASE_SERVICE_ROLE_KEY"),
   };
 }
@@ -57,7 +59,15 @@ function validateServerUrl(value: string, name: string): string {
   if (parsed.username || parsed.password || parsed.search || parsed.hash) {
     throw new Error(`${name} contiene componentes no permitidos.`);
   }
-  if (process.env.NODE_ENV === "production" && parsed.protocol !== "https:") {
+  const isLoopback =
+    parsed.hostname === "localhost" ||
+    parsed.hostname === "127.0.0.1" ||
+    parsed.hostname === "[::1]";
+  if (
+    process.env.NODE_ENV === "production" &&
+    parsed.protocol !== "https:" &&
+    !isLoopback
+  ) {
     throw new Error(`${name} debe utilizar HTTPS en producción.`);
   }
   if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {

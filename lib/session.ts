@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { NextRequest } from "next/server";
 import type { NextResponse } from "next/server";
 import { getClientIpAddress } from "./request-security";
@@ -50,6 +52,26 @@ type AuthResult =
   | { ok: true; context: SessionContext }
   | { ok: false; status: number; message: string; clearCookies?: boolean };
 
+type ProfileRow = {
+  id: string;
+  full_name: string;
+  role: AppRole;
+  status: "activo" | "inactivo";
+};
+
+type SessionRow = {
+  session_id: string;
+  last_activity_at: string;
+  absolute_expires_at: string;
+  revoked_at: string | null;
+};
+
+type SessionSecurityContext = {
+  profile: ProfileRow | null;
+  appSession: SessionRow | null;
+  sections: AppSection[];
+};
+
 export async function authenticateRequest(request: NextRequest, touch = true): Promise<AuthResult> {
   let accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
   let refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
@@ -72,29 +94,14 @@ export async function authenticateRequest(request: NextRequest, touch = true): P
   const sessionId = readJwtSessionId(accessToken!);
   if (!sessionId) return { ok: false, status: 401, message: "Sesión inválida.", clearCookies: true };
 
-  const [profileResponse, sessionResponse] = await Promise.all([
-    serviceRest(`profiles_tym?id=eq.${encodeURIComponent(authUser.id)}&select=id,full_name,role,status&limit=1`),
-    serviceRest(`app_sessions_tym?session_id=eq.${encodeURIComponent(sessionId)}&select=session_id,last_activity_at,absolute_expires_at,revoked_at&limit=1`),
-  ]);
-
-  if (!profileResponse.ok || !sessionResponse.ok) {
+  let securityContext: SessionSecurityContext;
+  try {
+    securityContext = await loadSessionSecurityContext(authUser.id, sessionId);
+  } catch (error) {
+    console.error("[session] No fue posible cargar el contexto de seguridad.", error);
     return { ok: false, status: 503, message: "La configuración de seguridad aún no está instalada." };
   }
-
-  const profiles = (await profileResponse.json()) as Array<{
-    id: string;
-    full_name: string;
-    role: AppRole;
-    status: "activo" | "inactivo";
-  }>;
-  const sessions = (await sessionResponse.json()) as Array<{
-    session_id: string;
-    last_activity_at: string;
-    absolute_expires_at: string;
-    revoked_at: string | null;
-  }>;
-  const profile = profiles[0];
-  const appSession = sessions[0];
+  const { profile, appSession, sections } = securityContext;
   if (!profile || profile.status !== "activo") {
     return { ok: false, status: 403, message: "La cuenta está inactiva.", clearCookies: true };
   }
@@ -114,7 +121,6 @@ export async function authenticateRequest(request: NextRequest, touch = true): P
     return { ok: false, status: 401, message: "La sesión terminó por inactividad.", clearCookies: true };
   }
 
-  const sections = await loadSections(authUser.id, profile.role);
   if (touch && now - new Date(appSession.last_activity_at).getTime() > 60_000) {
     await serviceRest(`app_sessions_tym?session_id=eq.${encodeURIComponent(sessionId)}`, {
       method: "PATCH",
@@ -228,6 +234,59 @@ async function loadSections(userId: string, role: AppRole): Promise<AppSection[]
   return sections
     .filter((section) => grantMap.get(section.id)?.can_view)
     .map((section) => ({ ...section, ...grantMap.get(section.id)! }));
+}
+
+async function loadSessionSecurityContext(
+  userId: string,
+  sessionId: string,
+): Promise<SessionSecurityContext> {
+  const rpcResponse = await serviceRest("rpc/get_app_session_context_tym", {
+    method: "POST",
+    body: {
+      p_user_id: userId,
+      p_session_id: sessionId,
+    },
+  });
+
+  if (rpcResponse.ok) {
+    const payload = (await rpcResponse.json()) as {
+      profile?: ProfileRow | null;
+      session?: SessionRow | null;
+      sections?: AppSection[];
+    } | null;
+    if (payload && Array.isArray(payload.sections)) {
+      return {
+        profile: payload.profile ?? null,
+        appSession: payload.session ?? null,
+        sections: payload.sections,
+      };
+    }
+  }
+
+  // Permite desplegar primero el código y después la migración optimizada.
+  return loadLegacySessionSecurityContext(userId, sessionId);
+}
+
+async function loadLegacySessionSecurityContext(
+  userId: string,
+  sessionId: string,
+): Promise<SessionSecurityContext> {
+  const [profileResponse, sessionResponse] = await Promise.all([
+    serviceRest(`profiles_tym?id=eq.${encodeURIComponent(userId)}&select=id,full_name,role,status&limit=1`),
+    serviceRest(`app_sessions_tym?session_id=eq.${encodeURIComponent(sessionId)}&select=session_id,last_activity_at,absolute_expires_at,revoked_at&limit=1`),
+  ]);
+  if (!profileResponse.ok || !sessionResponse.ok) {
+    throw new Error("No fue posible consultar perfiles o sesiones.");
+  }
+
+  const profiles = (await profileResponse.json()) as ProfileRow[];
+  const sessions = (await sessionResponse.json()) as SessionRow[];
+  const profile = profiles[0] ?? null;
+  return {
+    profile,
+    appSession: sessions[0] ?? null,
+    sections: profile ? await loadSections(userId, profile.role) : [],
+  };
 }
 
 function readJwtSessionId(jwt: string): string | null {

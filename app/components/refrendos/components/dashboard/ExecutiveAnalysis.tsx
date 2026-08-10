@@ -1,5 +1,4 @@
 import React from 'react';
-import { COLORS } from '../../constants';
 // Add any necessary imports here
 
 export const ExecutiveAnalysis: React.FC = () => {

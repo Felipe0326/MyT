@@ -5,19 +5,18 @@ import { ChartContainer } from './ChartContainer';
 import { CustomTooltip } from './CustomTooltip';
 import { Users } from 'lucide-react';
 import { COLORS } from '../../constants';
+import type { GestorData } from '../../services/dataService';
 
 interface GestoresChartProps {
-  gestoresData: any[];
+  gestoresData: GestorData[];
   totalGestores: number;
   formatCurrency: (value: number) => string;
-  CustomLegend: (value: string) => React.ReactNode;
 }
 
 export const GestoresChart: React.FC<GestoresChartProps> = ({
   gestoresData,
   totalGestores,
   formatCurrency,
-  CustomLegend
 }) => {
   return (
     <ChartContainer
@@ -52,7 +51,7 @@ export const GestoresChart: React.FC<GestoresChartProps> = ({
             />
             <Area type="monotone" dataKey="totalGeneral" name="Total Trámites" stroke="#cbd5e1" strokeWidth={1} strokeDasharray="4 4" fill="url(#colorShadow)" fillOpacity={1} activeDot={false} isAnimationActive={false} />
             <Area type="monotone" dataKey="gestores" name="Gestores" stroke={COLORS.traditional} strokeWidth={3} fill="url(#colorGestoresLine)" fillOpacity={1} activeDot={{ r: 6, strokeWidth: 2, stroke: 'white', fill: COLORS.traditional }} isAnimationActive={false}>
-                 <LabelList dataKey="gestores" position="top" offset={15} style={{ fill: COLORS.traditional, fontSize: '11px', fontWeight: 'bold' }} formatter={(value: number) => value.toLocaleString()} />
+                 <LabelList dataKey="gestores" position="top" offset={15} style={{ fill: COLORS.traditional, fontSize: '11px', fontWeight: 'bold' }} formatter={(value) => Number(value ?? 0).toLocaleString('es-MX')} />
             </Area>
           </ComposedChart>
         </SafeResponsiveContainer>

@@ -1,3 +1,5 @@
+import "server-only";
+
 import { getSupabaseEnvironment } from "./env";
 
 type FetchOptions = {
@@ -6,6 +8,8 @@ type FetchOptions = {
   accessToken?: string;
   serviceRole?: boolean;
   headers?: Record<string, string>;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 };
 
 export type AuthTokens = {
@@ -29,6 +33,15 @@ export async function supabaseFetch(path: string, options: FetchOptions = {}): P
       ? `Bearer ${env.secretKey}`
       : `Bearer ${env.publishableKey}`;
 
+  if (!path.startsWith("/") || path.startsWith("//")) {
+    throw new Error("La ruta solicitada a Supabase no es válida.");
+  }
+
+  const timeoutSignal = AbortSignal.timeout(options.timeoutMs ?? 15_000);
+  const signal = options.signal
+    ? AbortSignal.any([options.signal, timeoutSignal])
+    : timeoutSignal;
+
   return fetch(`${env.url}${path}`, {
     method: options.method ?? (options.body === undefined ? "GET" : "POST"),
     headers: {
@@ -40,6 +53,8 @@ export async function supabaseFetch(path: string, options: FetchOptions = {}): P
     },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     cache: "no-store",
+    redirect: "error",
+    signal,
   });
 }
 

@@ -54,7 +54,15 @@ const MONTH_CONFIG = {
 
 type MonthKey = keyof typeof MONTH_CONFIG;
 
-export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) => {
+export const RefrendosDashboard = ({
+  isActive = true,
+  csrfToken,
+  canUpdate = false,
+}: {
+  isActive?: boolean;
+  csrfToken: string;
+  canUpdate?: boolean;
+}) => {
   const [currentMonth, setCurrentMonth] = useState<MonthKey>('aug');
   const [showExtraCharts, setShowExtraCharts] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'analysis'>('dashboard');
@@ -157,18 +165,26 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
   }, [isActive]);
 
   const handleManualUpdate = async () => {
-    if (isUpdating) return;
+    if (isUpdating || !canUpdate) return;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 55_000);
     try {
       setIsUpdating(true);
-      await fetch('https://lowcode.morelos.gob.mx/webhook/refrendo_dashboard', {
+      setError(null);
+      const response = await fetch('/api/refrendos/refresh', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'x-csrf-token': csrfToken },
+        credentials: 'same-origin',
+        cache: 'no-store',
         signal: controller.signal,
       });
+      const payload = await response.json() as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || 'No fue posible solicitar la actualización.');
+      }
     } catch (updateError) {
       console.error('No fue posible ejecutar la actualización manual:', updateError);
+      setError((updateError as Error).message);
     } finally {
       clearTimeout(timeoutId);
       clearRefrendoDashboardCache();
@@ -222,19 +238,6 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
   const stats = useMemo(() => getAggregatedStats(filteredData), [filteredData]);
   const accumulatedMonthlyTotal = dashboard.metrics.total_registros;
   const totalGestores = useMemo(() => gestoresData.reduce((sum, item) => sum + item.gestores, 0), [gestoresData]);
-
-  const CustomLegend = useCallback((value: string) => (
-    <span className="ml-1 text-xs font-bold uppercase tracking-wide text-slate-600">{value}</span>
-  ), []);
-
-  const CustomizedDot = useCallback((props: any) => {
-    const { cx, cy, payload } = props;
-    if (!cx || !cy) return null;
-    const isGreen = (payload.total2025 ? payload.total > payload.total2025 : true)
-      && (payload.total2024 ? payload.total > payload.total2024 : true)
-      && (payload.total2025 || payload.total2024);
-    return isGreen ? <circle cx={cx} cy={cy} r={4} stroke="#fff" strokeWidth={2} fill="#16a34a" /> : null;
-  }, []);
 
   function changeMonth(month: MonthKey) {
     setCurrentMonth(month);
@@ -305,8 +308,11 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
       if (hour !== '') params.set('hora', hour);
 
       const response = await fetch(`/api/refrendos/export?${params.toString()}`, { cache: 'no-store' });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'No fue posible exportar Refrendos.');
+      const payload = await response.json() as RefrendoDashboardResponse['records'] | { error?: string };
+      if (!response.ok) {
+        const message = !Array.isArray(payload) ? payload.error : undefined;
+        throw new Error(message || 'No fue posible exportar Refrendos.');
+      }
 
       const headers = ['ID', 'Fecha', 'Año', 'Mes', 'Día', 'Día de la semana', 'Movimiento', 'Hora', 'Total', 'Digital', 'Tradicional', '% digital', '% tradicional'];
       const rows = (payload as RefrendoDashboardResponse['records']).map((record) => [
@@ -380,26 +386,28 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
               </div>
             </div>
 
-            <button
-              id="btn-force-update"
-              onClick={handleManualUpdate}
-              disabled={isUpdating || isSyncing}
-              aria-label="Actualizar información de refrendos"
-              title="Actualizar información"
-              className={`
-                flex min-h-11 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-4 py-2.5 transition-all sm:w-auto sm:min-w-[118px]
-                ${isUpdating || isSyncing
-                  ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
-                  : 'border-slate-200 bg-white text-brand-dark shadow-sm hover:border-brand-primary hover:text-brand-primary active:scale-95'}
-              `}
-            >
-              {isUpdating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              )}
-              <span className="text-xs font-bold">Actualizar</span>
-            </button>
+            {canUpdate && (
+              <button
+                id="btn-force-update"
+                onClick={handleManualUpdate}
+                disabled={isUpdating || isSyncing}
+                aria-label="Actualizar información de refrendos"
+                title="Actualizar información"
+                className={`
+                  flex min-h-11 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-4 py-2.5 transition-all sm:w-auto sm:min-w-[118px]
+                  ${isUpdating || isSyncing
+                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+                    : 'border-slate-200 bg-white text-brand-dark shadow-sm hover:border-brand-primary hover:text-brand-primary active:scale-95'}
+                `}
+              >
+                {isUpdating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                )}
+                <span className="text-xs font-bold">Actualizar</span>
+              </button>
+            )}
           </motion.div>
         </div>
         
@@ -529,8 +537,6 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
                 data={filteredData}
                 maxProcedures={Math.max(fixedYAxisMax, maxProcedures)}
                 formatCurrency={formatCurrency}
-                CustomLegend={CustomLegend}
-                CustomizedDot={CustomizedDot}
                 onFilterDate={selectDate}
               />
 
@@ -590,7 +596,6 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
                       currentMonth={currentMonth}
                       accumulatedRevenue={accumulatedRevenue}
                       formatCurrency={formatCurrency}
-                      CustomLegend={CustomLegend}
                       onDateSelect={selectRevenueDate}
                     />
 
@@ -599,7 +604,6 @@ export const RefrendosDashboard = ({ isActive = true }: { isActive?: boolean }) 
                       gestoresData={gestoresData}
                       totalGestores={totalGestores}
                       formatCurrency={formatCurrency}
-                      CustomLegend={CustomLegend}
                     />
                   </motion.div>
                 )}

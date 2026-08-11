@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+/* ==========================================================
+   TIPOGRAFÍAS INSTITUCIONALES
+   Copia las carpetas KarolSans, QuetzalliSans y TwogetherSans
+   dentro de public/fonts.
+   ========================================================== */
+@font-face {
+  font-family: "Twogether Sans";
+  src: url("/fonts/TwogetherSans/TwogetherSans-Regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+
+@font-face {
+  font-family: "Twogether Sans";
+  src: url("/fonts/TwogetherSans/TwogetherSans-Medium.otf") format("opentype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Twogether Sans";
+  src: url("/fonts/TwogetherSans/TwogetherSans-Bold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Quetzalli Sans";
+  src: url("/fonts/Quetzalli Sans/QuetzalliSans-Regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Quetzalli Sans";
+  src: url("/fonts/Quetzalli Sans/QuetzalliSans-Medium.otf") format("opentype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Quetzalli Sans";
+  src: url("/fonts/Quetzalli Sans/QuetzalliSans-Bold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Quetzalli Sans";
+  src: url("/fonts/Quetzalli Sans/QuetzalliSans-Black.otf") format("opentype");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karol Sans";
+  src: url("/fonts/KarolSans/fonnts.com-Karol_Sans_Regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karol Sans";
+  src: url("/fonts/KarolSans/fonnts.com-Karol_Sans_SemiBold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karol Sans";
+  src: url("/fonts/KarolSans/fonnts.com-Karol_Sans_Bold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karol Sans";
+  src: url("/fonts/KarolSans/fonnts.com-Karol_Sans_Black.otf") format("opentype");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+
+@utility scrollbar-hide {
+  &::-webkit-scrollbar { display: none; }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@theme {
+  --font-karla: "Karol Sans", "Twogether Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Twogether Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Quetzalli Sans", "Twogether Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+
+  --color-dash-bg: var(--dash-bg);
+  --color-dash-secondary: var(--dash-secondary);
+  --color-dash-accent: var(--dash-accent);
+  --color-dash-muted: var(--dash-muted);
+  --color-dash-special: var(--dash-special);
+  --color-dash-error: #87090c;
+  --color-dash-success: #526647;
+  --color-dash-info: #526647;
+  --color-dash-warning: #8b3c43;
+  --color-brand-primary: #74785c;
+  --color-brand-secondary: #d3bc8d;
+  --color-brand-dark: #2e332a;
+  --color-brand-grey: #c5bfb6;
+  --color-brand-wine: #8a495d;
+  --color-brand-brown: #7b543e;
+}
+
+:root {
+  --ink: #1f2d1f;
+  --muted: #5d5e5f;
+  --cream: #f5f4f2;
+  --paper: #fff;
+  --line: #e4e3d6;
+  --olive: #3d6b52;
+  --olive-dark: #2f5a43;
+  --olive-soft: #e6f1e9;
+  --wine: #773357;
+  --wine-dark: #5f2643;
+  --wine-soft: #f8f1f5;
+  --sand: #d2d5c9;
+  --shadow: 0 18px 50px rgba(39, 45, 38, 0.09);
+
+  --dash-bg: #ffffff;
+  --dash-secondary: #f5f4f2;
+  --dash-accent: #fcfcfc;
+  --dash-muted: #f5f4f2;
+  --dash-special: #f1f3f5;
+  --dash-text: #212529;
+  --dash-subtext: #495057;
+  --dash-border: transparent;
+  --dropdown-bg: #ffffff;
+  --dropdown-text: #212529;
+}
+
+.dark { }
+
+* { box-sizing: border-box; }
+html { background: var(--cream); color: var(--ink); }
+body { margin: 0; min-height: 100vh; background: var(--cream); color: var(--ink); font-family: "Twogether Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-synthesis: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+h1, h2, h3, h4, h5, h6, .login-heading h1, .invite-card h1, .profile-modal-head h2, .content-heading h1, .card-heading h2, .comments-heading h2, .coming-page h1 { font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif; }
+small, .eyebrow, .sidebar-nav > p, .sidebar-nav button em, .text-micro, .font-karla { font-family: "Karol Sans", "Twogether Sans", sans-serif; }
+button, input, select, textarea, option { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+::selection { background: #cfd9c8; color: #243020; }
+
+.font-twogether { font-family: "Twogether Sans", "Segoe UI", Arial, sans-serif !important; }
+.font-quetzalli { font-family: "Quetzalli Sans", "Twogether Sans", "Segoe UI", sans-serif !important; }
+.font-karol { font-family: "Karol Sans", "Twogether Sans", "Segoe UI", sans-serif !important; }
+
+.eyebrow { margin: 0 0 8px; color: var(--olive); font-size: 11px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+.primary-button, .secondary-button, .danger-button, .text-button { border: 0; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 750; transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
+.primary-button { min-height: 44px; padding: 0 18px; color: #fff; background: var(--olive); box-shadow: 0 8px 18px rgba(82, 102, 71, .2); }
+.primary-button:hover:not(:disabled) { background: var(--olive-dark); transform: translateY(-1px); }
+.secondary-button { min-height: 38px; padding: 0 13px; color: #445044; background: #f2f2ee; border: 1px solid #e4e5df; }
+.secondary-button:hover:not(:disabled) { background: #e8ece5; }
+.danger-button { min-height: 38px; padding: 0 13px; color: #8b3341; background: #fff7f8; border: 1px solid #ead3d8; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 750; transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+.danger-button:hover:not(:disabled) { color: #762b37; background: #f8e9ec; border-color: #ddb8c0; transform: translateY(-1px); }
+.text-button { color: var(--olive); background: transparent; padding: 8px; }
+.small-button { min-height: 36px; padding: 0 12px; font-size: 12px; }

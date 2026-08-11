@@ -1,0 +1,57 @@
+/* Admin */
+.admin-heading { align-items: center; }
+.admin-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.admin-stats > div { min-height: 78px; padding: 16px 18px; display: flex; align-items: center; gap: 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--paper); }
+.admin-stats i { width: 41px; height: 41px; display: grid; place-items: center; border-radius: 12px; color: var(--olive); background: var(--olive-soft); }
+.admin-stats span { display: grid; gap: 3px; color: #7c847d; font-size: 10px; }
+.admin-stats strong { color: var(--ink); font-size: 21px; }
+.manual-link { padding: 15px; display: grid; grid-template-columns: minmax(160px,.6fr) minmax(240px,1.4fr) auto; align-items: center; gap: 12px; border: 1px solid #e2d3ba; border-radius: 13px; background: #fff8e8; }
+.manual-link > div { display: grid; gap: 3px; }
+.manual-link strong { font-size: 12px; }
+.manual-link span { color: #816b48; font-size: 9px; }
+.manual-link code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #675334; font-size: 10px; }
+.invite-form-card, .user-list-card, .invitations-card { padding: 23px; }
+.invite-form { margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr .55fr; gap: 16px; }
+.invite-form fieldset { grid-column: 1 / -1; margin: 0; padding: 0; border: 0; }
+.permission-grid { margin-top: 9px; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 9px; }
+.permission-option { padding: 11px; display: flex; align-items: center; gap: 9px; border: 1px solid #e1dfd8; border-radius: 10px; background: #faf9f6; }
+.permission-option input { width: auto; height: auto; accent-color: var(--olive); }
+.permission-option > span { display: grid; gap: 3px; }
+.permission-option strong { font-size: 10px; }
+.permission-option small { color: #8a918a; font-size: 8px; }
+.admin-access-note { margin-top: 9px; min-height: 66px; padding: 13px 15px; display: flex; align-items: center; gap: 12px; border: 1px solid #cad8c4; border-radius: 12px; color: #40543a; background: #f1f6ee; }
+.admin-access-note > svg { flex: 0 0 auto; }
+.admin-access-note > span { display: grid; gap: 4px; }
+.admin-access-note strong { font-size: 11px; }
+.admin-access-note small { color: #657260; font-size: 9px; line-height: 1.4; }
+.admin-access-note.compact { width: 100%; min-height: 48px; margin-top: 0; padding: 9px 11px; }
+.invite-form > .primary-button, .invite-form > .form-error { grid-column: 1 / -1; }
+.invite-form > .primary-button { width: fit-content; }
+.user-list { margin-top: 18px; display: grid; }
+.user-row { min-height: 72px; padding: 12px 4px; display: grid; grid-template-columns: 45px minmax(170px,1fr) auto auto 85px auto; align-items: center; gap: 12px; border-top: 1px solid #ebe8e0; }
+.user-row-actions, .user-editor-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
+.user-row:first-child { border-top: 0; }
+.user-primary { min-width: 0; display: grid; gap: 4px; }
+.user-primary strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.user-primary strong em { margin-left: 7px; padding: 3px 5px; border-radius: 5px; color: var(--olive); background: var(--olive-soft); font-size: 7px; font-style: normal; text-transform: uppercase; }
+.user-primary span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #818981; font-size: 10px; }
+.role-badge, .status-badge { width: fit-content; padding: 5px 8px; border-radius: 7px; font-size: 8px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
+.role-administrador { color: #71313c; background: #f3e4e7; }
+.role-editor { color: #4c6543; background: #e7eee3; }
+.role-consulta { color: #5f6660; background: #eceeeb; }
+.status-activo { color: #49653f; background: #e4eee0; }
+.status-inactivo, .status-expired { color: #7d3641; background: #f4e6e8; }
+.status-pending { color: #775c2f; background: #f4ecdc; }
+.section-count { color: #878e87; font-size: 9px; white-space: nowrap; }
+.user-row.editing { grid-template-columns: 45px minmax(150px,.7fr) 130px 105px minmax(240px,1fr) minmax(155px,auto); padding: 16px 4px; }
+.user-permissions { display: flex; flex-wrap: wrap; gap: 7px; }
+.user-permissions label { color: #697169; font-size: 9px; white-space: nowrap; }
+.user-permissions input { width: auto; height: auto; accent-color: var(--olive); }
+.user-editor-error { grid-column: 2 / -1; width: 100%; }
+.invitation-list { margin-top: 15px; display: grid; }
+.invitation-row { min-height: 65px; padding: 11px 4px; display: grid; grid-template-columns: 36px minmax(180px,1fr) auto minmax(180px,.6fr) auto; align-items: center; gap: 11px; border-top: 1px solid #ebe8e0; }
+.invitation-row:first-child { border-top: 0; }
+.invitation-row > div:nth-child(2) { min-width: 0; display: grid; gap: 4px; }
+.invitation-row strong { font-size: 11px; }
+.invitation-row span { color: #818981; font-size: 9px; }
+.invite-date { white-space: nowrap; }

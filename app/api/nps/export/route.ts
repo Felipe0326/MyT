@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, clearSessionCookies } from "../../../../lib/session";
+import { collectPaginatedRows } from "../../../../lib/paginated-rows";
 import { readJsonOrText, userRest } from "../../../../lib/supabase";
 
 const VALID_SORTS = new Set(["date", "dependencia", "feedback", "score"]);
 const VALID_DIRECTIONS = new Set(["asc", "desc"]);
+const EXPORT_PAGE_SIZE = 1000;
+
+type NpsExportRow = {
+  submit_id: string | number;
+  [key: string]: unknown;
+};
+
+class NpsExportRequestError extends Error {
+  constructor(
+    readonly status: number,
+    readonly detail: unknown,
+  ) {
+    super("No fue posible consultar una página de la exportación NPS.");
+  }
+}
 
 function nullable(value: string | null): string | null {
   const cleaned = value?.trim();
@@ -41,35 +57,64 @@ export async function GET(request: NextRequest) {
     ? params.get("direction")!
     : "desc";
 
-  const rpcResponse = await userRest(
-    "rpc/get_nps_filtered_rows_tym_v2",
-    auth.context.accessToken,
-    {
-      method: "POST",
-      body: {
-        p_dependencia: nullable(params.get("dependencia")),
-        p_sucursal: nullable(params.get("sucursal")),
-        p_recomienda: nullableBoolean(params.get("recomienda")),
-        p_date_from: nullable(params.get("dateFrom")),
-        p_date_to: nullable(params.get("dateTo")),
-        p_sort: sort,
-        p_direction: direction,
-      },
-    },
-  );
+  const body = {
+    p_dependencia: nullable(params.get("dependencia")),
+    p_sucursal: nullable(params.get("sucursal")),
+    p_recomienda: nullableBoolean(params.get("recomienda")),
+    p_date_from: nullable(params.get("dateFrom")),
+    p_date_to: nullable(params.get("dateTo")),
+    p_sort: sort,
+    p_direction: direction,
+  };
 
-  if (!rpcResponse.ok) {
-    const detail = await readJsonOrText(rpcResponse);
+  try {
+    const records = await collectPaginatedRows(
+      async (from, to) => {
+        const limit = to - from + 1;
+        const rpcResponse = await userRest(
+          `rpc/get_nps_filtered_rows_tym_v2?offset=${from}&limit=${limit}`,
+          auth.context.accessToken,
+          {
+            method: "POST",
+            body,
+            timeoutMs: 30_000,
+          },
+        );
+
+        if (!rpcResponse.ok) {
+          throw new NpsExportRequestError(
+            rpcResponse.status,
+            await readJsonOrText(rpcResponse),
+          );
+        }
+
+        const rows = (await rpcResponse.json()) as unknown;
+        if (!Array.isArray(rows)) {
+          throw new Error("Supabase devolvió una respuesta inválida para la exportación NPS.");
+        }
+
+        return {
+          rows: rows as NpsExportRow[],
+        };
+      },
+      {
+        pageSize: EXPORT_PAGE_SIZE,
+        getRowKey: (row) => row.submit_id,
+      },
+    );
+
+    return NextResponse.json(records, {
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  } catch (error) {
+    const status = error instanceof NpsExportRequestError ? error.status : 502;
+    const detail = error instanceof NpsExportRequestError ? error.detail : String(error);
     return NextResponse.json(
       {
         error: "No fue posible exportar los registros NPS.",
         detail: process.env.NODE_ENV === "development" ? detail : undefined,
       },
-      { status: rpcResponse.status, headers: { "Cache-Control": "no-store" } },
+      { status, headers: { "Cache-Control": "no-store" } },
     );
   }
-
-  return NextResponse.json(await rpcResponse.json(), {
-    headers: { "Cache-Control": "private, no-store" },
-  });
 }

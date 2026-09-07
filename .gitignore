@@ -5,12 +5,9 @@
 /coverage/
 tsconfig.tsbuildinfo
 
-# Variables privadas
+# Variables privadas: .env.local y cualquier variante real nunca se versionan.
 .env*
 !.env.example
-
-# Vercel
-/.vercel/
 
 # Archivos locales
 .DS_Store

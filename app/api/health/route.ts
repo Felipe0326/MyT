@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  return NextResponse.json({ status: "ok", service: "tlamatiloyan-dashboard" }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ status: "ok", service: "sistema-movilidad-tym" }, { headers: { "Cache-Control": "no-store" } });
 }
 

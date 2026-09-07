@@ -3,6 +3,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import type { NextResponse } from "next/server";
 import { getClientIpAddress } from "./request-security";
+import { shouldTreatSectionAsAvailable } from "@/features/dashboards/core/catalog";
 import { randomToken } from "./security";
 import {
   getVerifiedAuthUser,
@@ -217,7 +218,7 @@ async function loadSections(userId: string, role: AppRole): Promise<AppSection[]
   if (!sectionsResponse.ok) return [];
   const rawSections = (await sectionsResponse.json()) as Array<Omit<AppSection, "can_view" | "can_edit" | "can_export">>;
   const sections = rawSections.map((section) => (
-    section.slug === "dashboard-2"
+    shouldTreatSectionAsAvailable(section.slug, section.availability)
       ? { ...section, availability: "disponible" as const }
       : section
   ));
@@ -258,12 +259,16 @@ async function loadSessionSecurityContext(
       return {
         profile: payload.profile ?? null,
         appSession: payload.session ?? null,
-        sections: payload.sections,
+        sections: payload.sections.map((section) => (
+          shouldTreatSectionAsAvailable(section.slug, section.availability)
+            ? { ...section, availability: "disponible" as const }
+            : section
+        )),
       };
     }
   }
 
-  // Permite desplegar primero el código y después la migración optimizada.
+  // Mantiene compatibilidad si la función optimizada aún no está instalada en la base.
   return loadLegacySessionSecurityContext(userId, sessionId);
 }
 

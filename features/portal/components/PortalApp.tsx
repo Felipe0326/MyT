@@ -26,23 +26,26 @@ import type { SessionData } from "@/types/app";
 import { AcceptInvitation } from "@/features/auth/components/AcceptInvitation";
 import { LoginScreen } from "@/features/auth/components/LoginScreen";
 import { ResetPassword } from "@/features/auth/components/ResetPassword";
-
-const NpsDashboard = dynamic(
-  () => import("@/features/nps/components/NpsDashboard").then((module) => module.NpsDashboard),
-  { loading: DashboardLoading },
-);
-const RefrendosDashboard = dynamic(
-  () => import("@/features/refrendos/RefrendosDashboard").then((module) => module.RefrendosDashboard),
-  { loading: DashboardLoading },
-);
-const LicenciasDashboard = dynamic(
-  () => import("@/features/licencias/components/LicenciasDashboard").then((module) => module.LicenciasDashboard),
-  { loading: DashboardLoading },
-);
+import {
+  getDashboardDefinition,
+  isDashboardRegistered,
+} from "@/features/dashboards/core/client-registry";
 const UsersAdmin = dynamic(
   () => import("@/features/users/components/UsersAdmin").then((module) => module.UsersAdmin),
-  { loading: DashboardLoading },
+  { loading: () => <DashboardLoading sectionName="Usuarios" /> },
 );
+const SectionsAdmin = dynamic(
+  () => import("@/features/sections/components/SectionsAdmin").then((module) => module.SectionsAdmin),
+  { loading: () => <DashboardLoading sectionName="Secciones" /> },
+);
+
+function DashboardLoading({ sectionName }: { sectionName: string }) {
+  return (
+    <div className="app-loading" role="status" aria-live="polite">
+      <span>Cargando {sectionName}…</span>
+    </div>
+  );
+}
 
 export function PortalApp() {
   const [session, setSession] = useState<SessionData | null>(null);
@@ -142,27 +145,58 @@ export function PortalApp() {
   if (resetToken) return <ResetPassword token={resetToken} onFinished={() => setResetToken(null)} />;
   if (!session) return <LoginScreen onAuthenticated={loadSession} />;
 
-  return <ApplicationShell session={session} idleWarning={idleWarning} onLogout={logout} />;
+  return <ApplicationShell session={session} idleWarning={idleWarning} onLogout={logout} onSessionRefresh={loadSession} />;
 }
 
-function DashboardLoading() {
-  return (
-    <div className="app-loading" role="status" aria-live="polite">
-      <span>Cargando módulo seguro…</span>
-    </div>
-  );
-}
-
-function ApplicationShell({ session, idleWarning, onLogout }: { session: SessionData; idleWarning: boolean; onLogout: () => Promise<void> }) {
-  const firstSection = session.sections.find((section) => section.availability === "disponible" || section.slug === "dashboard-2")?.slug ?? session.sections[0]?.slug ?? "empty";
+function ApplicationShell({
+  session,
+  idleWarning,
+  onLogout,
+  onSessionRefresh,
+}: {
+  session: SessionData;
+  idleWarning: boolean;
+  onLogout: () => Promise<void>;
+  onSessionRefresh: () => Promise<void>;
+}) {
+  const firstSection = session.sections.find(
+    (section) => section.availability === "disponible",
+  )?.slug ?? session.sections[0]?.slug ?? "empty";
   const [active, setActive] = useState(firstSection);
-  const [visitedDashboards, setVisitedDashboards] = useState<string[]>(
-    firstSection === "dashboard-nps" || firstSection === "dashboard-2" || firstSection === "dashboard-licencias" ? [firstSection] : [],
-  );
+  const [visitedDashboards, setVisitedDashboards] = useState<string[]>(() => {
+    const section = session.sections.find((item) => item.slug === firstSection);
+    return section?.availability === "disponible" && isDashboardRegistered(firstSection)
+      ? [firstSection]
+      : [];
+  });
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const activeSection = session.sections.find((section) => section.slug === active);
+
+  useEffect(() => {
+    const isAdminView = session.user.role === "administrador" && (active === "usuarios" || active === "secciones");
+    const stillAvailable = session.sections.some((section) => section.slug === active);
+    if (isAdminView || stillAvailable || active === "empty") return;
+
+    const fallback = session.sections.find((section) => section.availability === "disponible")?.slug
+      ?? session.sections[0]?.slug
+      ?? "empty";
+    setActive(fallback);
+  }, [active, session.sections, session.user.role]);
+
+  useEffect(() => {
+    setVisitedDashboards((current) =>
+      current.filter((slug) =>
+        session.sections.some(
+          (section) =>
+            section.slug === slug &&
+            section.availability === "disponible" &&
+            isDashboardRegistered(slug),
+        ),
+      ),
+    );
+  }, [session.sections]);
 
   useEffect(() => {
     if (!profileOpen) return;
@@ -174,7 +208,8 @@ function ApplicationShell({ session, idleWarning, onLogout }: { session: Session
   }, [profileOpen]);
 
   function selectSection(slug: string) {
-    if (slug === "dashboard-nps" || slug === "dashboard-2" || slug === "dashboard-licencias") {
+    const section = session.sections.find((item) => item.slug === slug);
+    if (section?.availability === "disponible" && isDashboardRegistered(slug)) {
       setVisitedDashboards((current) => current.includes(slug) ? current : [...current, slug]);
     }
     setActive(slug);
@@ -198,10 +233,16 @@ function ApplicationShell({ session, idleWarning, onLogout }: { session: Session
           <p>Secciones</p>
           {session.sections.map((section) => (
             <button key={section.id} className={active === section.slug ? "active" : ""} onClick={() => selectSection(section.slug)} title={collapsed ? section.title : undefined}>
-              <i>{sectionIcon(section)}</i><span>{section.title}</span>{section.availability === "proximamente" && section.slug !== "dashboard-2" && section.slug !== "dashboard-licencias" && <em>Próximo</em>}
+              <i>{sectionIcon(section)}</i><span>{section.title}</span>{(section.availability === "proximamente" || !isDashboardRegistered(section.slug)) && <em>Próximo</em>}
             </button>
           ))}
-          {session.user.role === "administrador" && <><p className="management-label">Administración</p><button className={active === "usuarios" ? "active" : ""} onClick={() => selectSection("usuarios")} title={collapsed ? "Usuarios" : undefined}><i><Users size={19} /></i><span>Usuarios</span></button></>}
+          {session.user.role === "administrador" && (
+            <>
+              <p className="management-label">Administración</p>
+              <button className={active === "usuarios" ? "active" : ""} onClick={() => selectSection("usuarios")} title={collapsed ? "Usuarios" : undefined}><i><Users size={19} /></i><span>Usuarios</span></button>
+              <button className={active === "secciones" ? "active" : ""} onClick={() => selectSection("secciones")} title={collapsed ? "Secciones" : undefined}><i><PanelsTopLeft size={19} /></i><span>Secciones</span></button>
+            </>
+          )}
         </nav>
 
         <div className="sidebar-footer">
@@ -237,36 +278,25 @@ function ApplicationShell({ session, idleWarning, onLogout }: { session: Session
       <section className="workspace">
         <header className="mobile-header"><button onClick={() => setMobileOpen(true)} aria-label="Abrir menú"><Menu size={22} /></button><div className="mobile-wordmark"><strong>Movilidad</strong><span>y Transporte</span></div><button className="mobile-profile-button" type="button" onClick={() => setProfileOpen(true)} aria-label="Abrir perfil"><div className="avatar small">{initials(session.user.fullName)}</div></button></header>
         {idleWarning && <div className="idle-banner"><Clock3 size={17} /><span>Tu sesión se cerrará pronto por inactividad. Interactúa con la página para continuar.</span></div>}
-        <main className={`workspace-content ${active === "dashboard-nps" || active === "dashboard-2" || active === "dashboard-licencias" ? "full-bleed" : ""}`}>
-          {visitedDashboards.includes("dashboard-nps") && (
-            <div hidden={active !== "dashboard-nps"}>
-              <NpsDashboard
-                isActive={active === "dashboard-nps"}
-                csrfToken={session.csrfToken}
-                canUpdate={Boolean(session.sections.find((section) => section.slug === "dashboard-nps")?.can_edit)}
-              />
-            </div>
-          )}
-          {visitedDashboards.includes("dashboard-2") && (
-            <div hidden={active !== "dashboard-2"}>
-              <RefrendosDashboard
-                isActive={active === "dashboard-2"}
-                csrfToken={session.csrfToken}
-                canUpdate={Boolean(session.sections.find((section) => section.slug === "dashboard-2")?.can_edit)}
-              />
-            </div>
-          )}
-          {visitedDashboards.includes("dashboard-licencias") && (
-            <div hidden={active !== "dashboard-licencias"}>
-              <LicenciasDashboard
-                isActive={active === "dashboard-licencias"}
-                csrfToken={session.csrfToken}
-                canUpdate={Boolean(session.sections.find((section) => section.slug === "dashboard-licencias")?.can_edit)}
-              />
-            </div>
-          )}
+        <main className={`workspace-content ${activeSection?.availability === "disponible" && isDashboardRegistered(active) ? "full-bleed" : ""}`}>
+          {visitedDashboards.map((slug) => {
+            const definition = getDashboardDefinition(slug);
+            if (!definition) return null;
+            const Dashboard = definition.Component;
+            const section = session.sections.find((item) => item.slug === slug);
+            return (
+              <div key={slug} hidden={active !== slug}>
+                <Dashboard
+                  isActive={active === slug}
+                  csrfToken={session.csrfToken}
+                  canUpdate={Boolean(section?.can_edit)}
+                />
+              </div>
+            );
+          })}
           {active === "usuarios" && session.user.role === "administrador" && <UsersAdmin csrfToken={session.csrfToken} currentUserId={session.user.id} />}
-          {activeSection?.availability === "proximamente" && active !== "dashboard-2" && active !== "dashboard-licencias" && <ComingSoon section={activeSection} />}
+          {active === "secciones" && session.user.role === "administrador" && <SectionsAdmin csrfToken={session.csrfToken} onSectionsChanged={onSessionRefresh} />}
+          {activeSection && (activeSection.availability === "proximamente" || !isDashboardRegistered(active)) && <ComingSoon section={activeSection} />}
           {active === "empty" && <EmptyAccess />}
         </main>
       </section>

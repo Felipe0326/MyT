@@ -19,7 +19,7 @@
 }
 
 .admin-stats {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .admin-stats > div,
@@ -48,7 +48,8 @@
 
 .permission-option strong,
 .permission-option small {
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 /* Vista normal de cada usuario */
@@ -316,10 +317,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .admin-stats > div:last-child {
-    grid-column: 1 / -1;
-  }
-
   .invite-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -394,10 +391,6 @@
 
   .admin-stats {
     grid-template-columns: 1fr;
-  }
-
-  .admin-stats > div:last-child {
-    grid-column: auto;
   }
 
   .invite-form-card,
@@ -692,5 +685,105 @@
 
   .delete-user-actions .danger-button {
     order: -1;
+  }
+}
+
+/* Administración: encabezados y modales */
+@media (max-width: 760px) {
+  .admin-module-header {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 19px;
+  }
+  .admin-header-action { width: 100%; justify-content: center; }
+  .admin-modal-backdrop { padding: 14px; }
+  .admin-modal-dialog {
+    width: 100%;
+    max-height: calc(100vh - 28px);
+    padding: 21px 18px;
+    border-radius: 20px;
+  }
+  .invite-form.modal-form,
+  .user-modal-fields {
+    grid-template-columns: 1fr;
+  }
+  .user-modal-fields .user-edit-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .permission-grid,
+  .user-modal-permissions .permission-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .user-modal-permissions { grid-column: auto; }
+  .admin-modal-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .admin-modal-actions > button { width: 100%; min-width: 0; }
+}
+
+@media (max-width: 480px) {
+  .admin-module-title { align-items: flex-start; }
+  .admin-module-title > i { width: 46px; height: 46px; border-radius: 13px; }
+  .admin-module-title h1 { font-size: 25px; }
+  .admin-modal-backdrop { align-items: end; padding: 10px; }
+  .admin-modal-dialog {
+    max-height: calc(100vh - 20px);
+    padding: 20px 16px 16px;
+    border-radius: 22px;
+  }
+
+  .user-modal-fields .user-edit-fields,
+  .user-modal-permissions .permission-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-modal-actions { grid-template-columns: 1fr; }
+  .admin-modal-actions .primary-button { order: -1; }
+}
+
+/* Responsive final de modales administrativos */
+@media (max-width: 900px) {
+  .admin-user-modal .user-modal-permissions .permission-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-user-modal .user-edit-fields {
+    width: 100%;
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-user-modal .admin-modal-user-title {
+    align-items: flex-start;
+  }
+  .admin-user-modal .admin-modal-user-title .avatar.large {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+  }
+  .admin-user-modal .user-modal-permissions .permission-grid,
+  .admin-user-modal .user-edit-fields {
+    grid-template-columns: 1fr;
+  }
+  .admin-user-modal .user-modal-permissions .permission-option {
+    min-height: 56px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-modal-header h2 {
+    font-size: 22px;
+  }
+  .admin-modal-user-title span {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* En móviles medianos las dos acciones caben en una sola fila y evitan un modal innecesariamente alto. */
+@media (min-width: 380px) and (max-width: 480px) {
+  .admin-user-modal .admin-modal-actions,
+  .admin-section-modal .admin-modal-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-user-modal .admin-modal-actions .primary-button,
+  .admin-section-modal .admin-modal-actions .primary-button {
+    order: initial;
   }
 }

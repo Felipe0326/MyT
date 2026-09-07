@@ -22,6 +22,7 @@ import {
 import { sendInvitationEmail } from "../../../../lib/email";
 import { authenticateRequest, clearSessionCookies } from "../../../../lib/session";
 import { serviceRest } from "../../../../lib/supabase";
+import { shouldTreatSectionAsAvailable } from "@/features/dashboards/core/catalog";
 
 type AdminContext = Awaited<ReturnType<typeof authenticateRequest>>;
 
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
   const [profilesResponse, sectionsResponse, permissionsResponse, invitationsResponse, invitationPermissionsResponse] =
     await Promise.all([
       serviceRest("profiles_tym?select=id,email,full_name,role,status,created_at,updated_at&order=created_at.desc"),
-      serviceRest("app_sections_tym?select=id,slug,title,availability,is_active&order=sort_order.asc"),
+      serviceRest("app_sections_tym?select=id,slug,title,availability,is_active&is_active=eq.true&order=sort_order.asc"),
       serviceRest("user_section_permissions_tym?select=user_id,section_id,can_view,can_edit,can_export"),
       serviceRest("invitations_tym?select=id,email,full_name,role,status,expires_at,sent_at,send_count,created_at&order=created_at.desc&limit=100"),
       serviceRest("invitation_section_permissions_tym?select=invitation_id,section_id"),
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     users: await profilesResponse.json(),
     sections: sections.map((section) => (
-      section.slug === "dashboard-2"
+      shouldTreatSectionAsAvailable(section.slug, section.availability)
         ? { ...section, availability: "disponible" as const }
         : section
     )),

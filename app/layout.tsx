@@ -12,13 +12,13 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const origin = getAppUrl();
-  const title = "Movilidad y Transporte | Gobierno de Morelos";
-  const description = "Plataforma segura para consultar datos de trámites, refrendos y experiencia ciudadana NPS.";
+  const title = "Tlamati 2.0.";
+  const description = "Repositorio de Dashboards Principales.";
   return {
     metadataBase: new URL(origin),
     title,
     description,
-    applicationName: "Movilidad y Transporte",
+    applicationName: "Tlamati 2.0.",
     robots: { index: false, follow: false },
     icons: {
       icon: [
@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       type: "website",
-      images: [{ url: `${origin}/og-tym.png`, width: 1536, height: 1024, alt: "Movilidad y Transporte del Gobierno de Morelos" }],
+      images: [{ url: `${origin}/logo-morelos-tym.png`, width: 1536, height: 1024, alt: "Tlamati 2.0." }],
     },
     twitter: { card: "summary_large_image", title, description, images: [`${origin}/og-tym.png`] },
   };

@@ -1,6 +1,6 @@
 import "server-only";
 
-export type N8nDashboard = "licencias" | "refrendos" | "nps";
+export type N8nDashboard = string;
 
 type WebhookDefinition = {
   url: string | undefined;
@@ -103,23 +103,15 @@ export async function triggerN8nWebhook(
 }
 
 function getWebhookDefinition(dashboard: N8nDashboard): WebhookDefinition {
-  const commonSecret = process.env.N8N_WEBHOOK_SECRET?.trim();
+  if (!/^[a-z0-9-]+$/.test(dashboard)) {
+    throw new N8nWebhookConfigurationError("El identificador del tablero no es válido.");
+  }
 
-  if (dashboard === "licencias") {
-    return {
-      url: process.env.N8N_LICENCIAS_WEBHOOK_URL?.trim(),
-      secret: process.env.N8N_LICENCIAS_WEBHOOK_SECRET?.trim() || commonSecret,
-    };
-  }
-  if (dashboard === "refrendos") {
-    return {
-      url: process.env.N8N_REFRENDOS_WEBHOOK_URL?.trim(),
-      secret: process.env.N8N_REFRENDOS_WEBHOOK_SECRET?.trim() || commonSecret,
-    };
-  }
+  const prefix = dashboard.toUpperCase().replaceAll("-", "_");
+  const commonSecret = process.env.N8N_WEBHOOK_SECRET?.trim();
   return {
-    url: process.env.N8N_NPS_WEBHOOK_URL?.trim(),
-    secret: process.env.N8N_NPS_WEBHOOK_SECRET?.trim() || commonSecret,
+    url: process.env[`N8N_${prefix}_WEBHOOK_URL`]?.trim(),
+    secret: process.env[`N8N_${prefix}_WEBHOOK_SECRET`]?.trim() || commonSecret,
   };
 }
 

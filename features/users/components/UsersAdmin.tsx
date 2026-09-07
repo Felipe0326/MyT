@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import {
   Check,
+  CheckCircle2,
   Copy,
+  Eye,
   MailPlus,
   RefreshCw,
   Shield,
@@ -224,38 +226,37 @@ export function UsersAdmin({
 
   return (
     <div className="dashboard-stack">
-      <header className="content-heading admin-heading">
-        <div className="admin-heading-copy">
-          <p className="eyebrow">Administración</p>
-          <h1>Usuarios y permisos</h1>
-          <p>
-            Los administradores tienen acceso total. Para los demás roles puedes asignar los
-            tableros permitidos.
-          </p>
+      <header className="admin-module-header surface">
+        <div className="admin-module-title">
+          <i><Users size={23} /></i>
+          <div>
+            <p className="eyebrow">Administración</p>
+            <h1>Usuarios y permisos</h1>
+            <p>Administra accesos, roles y tableros permitidos.</p>
+          </div>
         </div>
 
-        <button className="primary-button" onClick={() => setShowInvite(true)}>
+        <button className="primary-button admin-header-action" type="button" onClick={() => setShowInvite(true)}>
           <MailPlus size={17} /> Nuevo usuario
         </button>
       </header>
 
-      <section className="admin-stats">
+      <section className="admin-stats" aria-label="Resumen de usuarios">
         <div>
           <i><Users size={20} /></i>
-          <span><strong>{data?.users.length ?? 0}</strong> Usuarios registrados</span>
+          <span>Total<strong>{data?.users.length ?? 0}</strong></span>
+        </div>
+        <div>
+          <i><CheckCircle2 size={20} /></i>
+          <span>Activos<strong>{data?.users.filter((user) => user.status === "activo").length ?? 0}</strong></span>
         </div>
         <div>
           <i><Shield size={20} /></i>
-          <span>
-            <strong>
-              {data?.users.filter((user) => user.role === "administrador").length ?? 0}
-            </strong>{" "}
-            Administradores
-          </span>
+          <span>Administradores<strong>{data?.users.filter((user) => user.role === "administrador").length ?? 0}</strong></span>
         </div>
         <div>
-          <i><MailPlus size={20} /></i>
-          <span><strong>{pending.length}</strong> Invitaciones pendientes</span>
+          <i><Eye size={20} /></i>
+          <span>Consulta<strong>{data?.users.filter((user) => user.role === "consulta").length ?? 0}</strong></span>
         </div>
       </section>
 

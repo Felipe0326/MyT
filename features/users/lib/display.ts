@@ -1,8 +1,9 @@
 import type { AppRole } from "@/lib/session";
 import type { SectionRecord } from "@/features/users/types";
+import { shouldTreatSectionAsAvailable } from "@/features/dashboards/core/catalog";
 
 export function isSectionAvailable(section: SectionRecord) {
-  return section.availability === "disponible" || section.slug === "dashboard-2";
+  return shouldTreatSectionAsAvailable(section.slug, section.availability);
 }
 
 export function roleLabel(role: AppRole) {

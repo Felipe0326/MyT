@@ -93,11 +93,11 @@ export function LoginScreen({ onAuthenticated }: { onAuthenticated: () => Promis
 
         <div className="login-heading">
           <h1 id="login-title">
-            {mode === "login" ? "Bienvenido/a" : "Restablece tu contraseña"}
+            {mode === "login" ? "Tlamati 2.0" : "Restablece tu contraseña"}
           </h1>
           <p>
             {mode === "login"
-              ? "Al sistema de consulta de información de trámites, refrendos y experiencia ciudadana NPS."
+              ? "Repositorio de Dashboards Principales."
               : "Escribe tu correo institucional y te enviaremos un enlace de recuperación."}
           </p>
         </div>

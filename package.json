@@ -1,6 +1,6 @@
 {
-  "name": "tlamatiloyan-dashboard",
-  "version": "0.3.0",
+  "name": "sistema-movilidad-tym",
+  "version": "1.0.0",
   "private": true,
   "engines": {
     "node": ">=20.9.0 <25"
@@ -9,7 +9,6 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit --incremental false",
     "lint": "eslint . --ignore-pattern .next"
   },

@@ -43,7 +43,10 @@ export async function handleDashboardRefresh(
   }
 
   const permission = auth.context.sections.find(
-    (section) => section.slug === configuration.sectionSlug && section.can_edit,
+    (section) =>
+      section.slug === configuration.sectionSlug &&
+      section.availability === "disponible" &&
+      section.can_edit,
   );
   if (!permission) {
     return jsonError("No tienes permiso para ejecutar esta actualización.", 403);
@@ -70,7 +73,8 @@ export async function handleDashboardRefresh(
     return NextResponse.json(
       {
         ok: true,
-        message: result.message || configuration.successMessage,
+        // El mensaje visible lo controla la aplicación; no se expone texto técnico de n8n.
+        message: configuration.successMessage,
         recordsProcessed: result.recordsProcessed,
         updatedAt: result.updatedAt,
       },

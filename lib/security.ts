@@ -51,6 +51,57 @@ export const deleteUserSchema = z.object({
   userId: z.string().uuid(),
 });
 
+const sectionTitleSchema = z
+  .string()
+  .trim()
+  .min(2)
+  .max(100)
+  .refine(hasNoControlCharacters, "El nombre contiene caracteres no permitidos.");
+
+const sectionDescriptionSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .refine(hasNoControlCharacters, "La descripción contiene caracteres no permitidos.");
+
+const sectionIconSchema = z.enum([
+  "layout-dashboard",
+  "activity",
+  "refresh-cw",
+  "file-text",
+]);
+
+const sectionAvailabilitySchema = z.enum(["disponible", "proximamente"]);
+
+export const createSectionSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .min(11)
+    .max(80)
+    .regex(/^dashboard-[a-z0-9]+(?:-[a-z0-9]+)*$/, "El slug no tiene un formato válido."),
+  title: sectionTitleSchema,
+  description: sectionDescriptionSchema,
+  icon: sectionIconSchema,
+  sortOrder: z.number().int().min(1).max(10000),
+  availability: sectionAvailabilitySchema,
+  isActive: z.boolean(),
+});
+
+export const updateSectionSchema = z.object({
+  id: z.string().uuid(),
+  title: sectionTitleSchema,
+  description: sectionDescriptionSchema,
+  icon: sectionIconSchema,
+  sortOrder: z.number().int().min(1).max(10000),
+  availability: sectionAvailabilitySchema,
+  isActive: z.boolean(),
+});
+
+export const archiveSectionSchema = z.object({
+  id: z.string().uuid(),
+});
+
 export const acceptInvitationSchema = z.object({
   token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   password: strongPasswordSchema,

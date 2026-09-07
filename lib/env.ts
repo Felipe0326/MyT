@@ -33,6 +33,18 @@ export function getAppUrl(origin?: string): string {
     return validateServerUrl(origin.trim(), "origen de la solicitud");
   }
 
+  const vercelDomain =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
+    process.env.VERCEL_URL?.trim() ||
+    process.env.VERCEL_BRANCH_URL?.trim();
+
+  if (vercelDomain) {
+    const normalized = vercelDomain.startsWith("http://") || vercelDomain.startsWith("https://")
+      ? vercelDomain
+      : `https://${vercelDomain}`;
+    return validateServerUrl(normalized, "URL de Vercel");
+  }
+
   if (process.env.NODE_ENV === "production") {
     throw new Error("Falta la variable de entorno APP_URL en producción.");
   }
